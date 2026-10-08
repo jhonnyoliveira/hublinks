@@ -200,13 +200,15 @@ Retenção em camadas:
 | `click_events` (usuários reais) | **13 meses** (`EVENTS_RETENTION_DAYS=395`) | Cobre um ciclo anual para comparar sazonalidade |
 | `click_events` com `is_bot = true` | **30 dias** (`BOT_EVENTS_RETENTION_DAYS=30`) | Servem apenas para depurar o filtro de bots |
 | `click_daily` | **Para sempre** | Agregado pequeno que preserva todo o histórico analítico |
-| `visitor_seen` | **Enquanto o alvo existir** | Base da unicidade permanente; apagar faria visitantes antigos serem contados como novos |
+| `visitor_seen` | **Enquanto o alvo existir** (inclusive na lixeira) | Base da unicidade permanente; apagar faria visitantes antigos serem contados como novos |
+| Itens na lixeira (links, canais, marketplaces) | **30 dias** (`TRASH_RETENTION_DAYS=30`) | Permite restaurar exclusões acidentais; depois a exclusão é definitiva |
 
 Regras:
 - As flags `is_unique_url` e `is_unique_target` são calculadas na inserção do evento. Somá-las por dia em `click_daily` dá contagens exatas de únicos, mesmo após a remoção do evento bruto.
 - **Job de agregação** (diário): agrega o dia anterior em `click_daily`, ignorando eventos de bot. Deve ser idempotente (reexecutar o mesmo dia não duplica valores).
 - **Job de limpeza** (diário): remove eventos além da retenção **somente se o dia correspondente já estiver agregado**.
-- Ao excluir um link ou produto, apagar as linhas correspondentes de `visitor_seen`.
+- **Lixeira:** excluir um link, canal ou marketplace o envia à lixeira (exclusão lógica), de onde pode ser restaurado por 30 dias. Durante esse prazo, códigos e URLs do item respondem 404 e as linhas de `visitor_seen` são mantidas, para que a restauração não faça visitantes antigos contarem como novos.
+- **Exclusão definitiva:** ao fim do prazo da lixeira, o job de limpeza marca o item como excluído definitivamente e apaga as linhas correspondentes de `visitor_seen` (links e, a partir da fase 2, produtos). Códigos curtos nunca são reutilizados e as contagens de `click_daily` permanecem nos totais.
 - As consultas do painel leem de `click_daily` para períodos fechados e de `click_events` para o dia corrente.
 - Prazos configuráveis por variável de ambiente; devem ser descritos na página `/privacidade`.
 - Perde-se com a limpeza apenas o detalhe fino (`referer`, `user_agent`, `visitor_id` por evento), o que também reduz o risco de privacidade.
