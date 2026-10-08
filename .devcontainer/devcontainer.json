@@ -1,0 +1,38 @@
+{
+  "name": "HubLinks Dev",
+  "dockerComposeFile": ["../docker-compose.yml", "docker-compose.yml"],
+  "service": "dev",
+  "workspaceFolder": "/workspaces/app",
+  "shutdownAction": "stopCompose",
+  "remoteUser": "vscode",
+  "mounts": [
+    "source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,type=bind,consistency=cached",
+    "source=${localEnv:HOME}/.claude,target=/home/vscode/.claude,type=bind"
+  ],
+  "postCreateCommand": "corepack enable && pnpm install",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-azuretools.vscode-docker",
+        "OpenAI.chatgpt",
+        "Anthropic.claude-code",
+        "EditorConfig.EditorConfig",
+        "fill-labs.dependi",
+        "formulahendry.auto-rename-tag",
+        "usernamehw.errorlens",
+        "eamodio.gitlens",
+        "streetsidesoftware.code-spell-checker",
+        "streetsidesoftware.code-spell-checker-portuguese-brazilian"
+      ]
+    }
+  },
+  "features": {
+    "ghcr.io/anthropics/devcontainer-features/claude-code:1.0": {}
+  },
+
+  "containerEnv": {
+    "CLAUDE_CONFIG_DIR": "/home/vscode/.claude",
+    "DATABASE_URL": "postgresql://hublinks:hublinks@postgres:5432/hublinks",
+    "REDIS_URL": "redis://redis:6379"
+  }
+}

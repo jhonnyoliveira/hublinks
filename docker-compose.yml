@@ -1,0 +1,83 @@
+services:
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: hublinks-dev
+    command: sleep infinity
+    working_dir: /workspaces/app
+    user: vscode
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      NODE_ENV: development
+      TZ: America/Sao_Paulo
+
+      DATABASE_URL: postgresql://hublinks:hublinks@postgres:5432/hublinks
+      DATABASE_URL_MIGRATION: postgresql://hublinks:hublinks@postgres:5432/hublinks
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:-dev-segredo-que-deve-ter-pelo-menos-32-caracteres-no-total}
+      ACCESS_TOKEN_TTL: ${ACCESS_TOKEN_TTL:-900}
+      REFRESH_TOKEN_TTL: ${REFRESH_TOKEN_TTL:-604800}
+      AUTH_MAX_SESSOES: ${AUTH_MAX_SESSOES:-10}
+
+
+    volumes:
+      # In the target code repository, this compose file should live in
+      # .devcontainer/. If so, keep "..:/workspaces/hublinks:cached".
+      # If copied to the repository root, change this to ".:/workspaces/hublinks:cached".
+      - ./:/workspaces/app:cached
+      - pnpm-store:/home/node/.local/share/pnpm
+      - bash-history:/home/node/commandhistory
+      - ${HOME}/.ssh:/home/node/.ssh:ro
+      - ${HOME}/.gitconfig:/home/node/.gitconfig:ro
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+    ports:
+      - '3000:3000' # API, common default
+      - '3333:3333' # API, alternative local default
+
+  postgres:
+    image: timescale/timescaledb:2.16.1-pg16
+    container_name: hublinks-postgres
+    environment:
+      POSTGRES_USER: hublinks
+      POSTGRES_PASSWORD: hublinks
+      POSTGRES_DB: hublinks
+      TZ: America/Sao_Paulo
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./.devcontainer/postgres/init:/docker-entrypoint-initdb.d:ro
+    ports:
+      - '5432:5432'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U hublinks -d hublinks']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: hublinks-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    ports:
+      - '6379:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  postgres-data:
+  redis-data:
+  pnpm-store:
+  bash-history:
+
