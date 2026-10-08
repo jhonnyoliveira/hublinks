@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"github.com/hublinks/hublinks/internal/admin"
 	"github.com/hublinks/hublinks/internal/api"
 	"github.com/hublinks/hublinks/internal/assets"
@@ -17,8 +18,11 @@ import (
 	"github.com/hublinks/hublinks/internal/web"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"log/slog"
+	"net"
 	"net/http"
 	"os"
+	"strings"
+	"time"
 )
 
 func New(pool *pgxpool.Pool, c config.Config) http.Handler {
@@ -99,7 +103,30 @@ func New(pool *pgxpool.Pool, c config.Config) http.Handler {
 	recorder := redirect.EventRecorder{Queue: queue, Pepper: c.Pepper, TrustedProxies: c.TrustedProxies, Bots: redirect.NewBotDetector(c.BotDistinctCodes, c.BotWindow)}
 	public := &redirect.Handler{Catalog: store.NewCatalog(pool), Cache: resolutionCache, BaseURL: c.BaseURL, Recorder: recorder}
 	mux.Handle("GET /", httpx.NewRateLimiter(c.Pepper, c.PublicRateLimit).Middleware(public))
-	return httpx.Log(mux, slog.New(slog.NewJSONHandler(os.Stdout, nil)))
+	logger := newLogger(c.LogLevel)
+	return httpx.Recover(httpx.Log(crossOrigin(mux), logger), logger)
+}
+
+func newLogger(level string) *slog.Logger {
+	var l slog.Level
+	if err := l.UnmarshalText([]byte(level)); err != nil {
+		l = slog.LevelInfo
+	}
+	return slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: l}))
+}
+
+// crossOrigin recusa requisições de escrita iniciadas por outro site (por
+// Origin e Sec-Fetch-Site) em /admin e /api/v1. As rotas públicas ficam de fora
+// de propósito: o beacon e o redirecionamento precisam aceitar outros sites.
+func crossOrigin(next http.Handler) http.Handler {
+	protected := http.NewCrossOriginProtection().Handler(next)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if p := r.URL.Path; p == "/admin" || strings.HasPrefix(p, "/admin/") || strings.HasPrefix(p, "/api/v1/") {
+			protected.ServeHTTP(w, r)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 func Run(ctx context.Context, c config.Config) error {
 	pool, err := store.Open(ctx, c.DatabaseURL)
@@ -119,11 +146,31 @@ func Run(ctx context.Context, c config.Config) error {
 	if err = (maintenance.Manager{Pool: pool, Config: c}).Start(ctx); err != nil {
 		return err
 	}
-	s := &http.Server{Addr: c.HTTPAddr, Handler: New(pool, c)}
-	go func() { <-ctx.Done(); _ = s.Shutdown(context.Background()) }()
-	err = s.ListenAndServe()
-	if err == http.ErrServerClosed {
-		return nil
+	ln, err := net.Listen("tcp", c.HTTPAddr)
+	if err != nil {
+		return err
 	}
-	return err
+	return serve(ctx, ln, &http.Server{
+		Handler:           New(pool, c),
+		ReadHeaderTimeout: 10 * time.Second,
+		IdleTimeout:       2 * time.Minute,
+	}, 15*time.Second)
+}
+
+// serve atende até o contexto ser cancelado e então encerra com Shutdown,
+// esperando as requisições em andamento por até grace. Só retorna depois que o
+// Shutdown termina, para o processo não sair no meio de uma resposta.
+func serve(ctx context.Context, ln net.Listener, s *http.Server, grace time.Duration) error {
+	shutdownDone := make(chan error, 1)
+	go func() {
+		<-ctx.Done()
+		sctx, cancel := context.WithTimeout(context.Background(), grace)
+		defer cancel()
+		shutdownDone <- s.Shutdown(sctx)
+	}()
+	err := s.Serve(ln)
+	if !errors.Is(err, http.ErrServerClosed) {
+		return err
+	}
+	return <-shutdownDone
 }

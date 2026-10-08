@@ -10,12 +10,21 @@ import (
 	"time"
 )
 
+// bootstrapLockKey identifica o advisory lock do bootstrap (valor arbitrário e fixo).
+const bootstrapLockKey int64 = 0x68756c6e6b73
+
 func Bootstrap(ctx context.Context, pool *pgxpool.Pool, orgName, email, password string) error {
 	tx, err := pool.Begin(ctx)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback(ctx)
+	// Serializa réplicas que sobem juntas numa instalação nova: sem isso, todas veem
+	// "sem organização e sem usuários" e só uma consegue criar (as outras falham
+	// com violação de unicidade). O lock vale até o fim da transação.
+	if _, err = tx.Exec(ctx, "SELECT pg_advisory_xact_lock($1)", bootstrapLockKey); err != nil {
+		return err
+	}
 	now := time.Now().UTC()
 	var orgID uuid.UUID
 	err = tx.QueryRow(ctx, "SELECT id FROM organizations ORDER BY created_at LIMIT 1").Scan(&orgID)

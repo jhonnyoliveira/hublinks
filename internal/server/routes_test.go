@@ -85,7 +85,7 @@ func TestLiteralRoutesWinOverPublicCodePattern(t *testing.T) {
 	if w = a.do(http.MethodGet, "/privacidade", false, nil, false); w.Code != http.StatusOK || !strings.Contains(w.Body.String(), "rivacidade") {
 		t.Fatalf("/privacidade: %d", w.Code)
 	}
-	for _, path := range []string{"/static/vendor/htmx.min.js", "/static/vendor/alpine.min.js", "/static/js/panel.js", "/static/css/app.dev.css", "/static/fonts/inter-latin-wght-normal.woff2"} {
+	for _, path := range []string{"/static/vendor/htmx.min.js", "/static/vendor/alpine.min.js", "/static/js/panel.js", "/static/css/base.css", "/static/fonts/inter-latin-wght-normal.woff2"} {
 		if w = a.do(http.MethodGet, path, false, nil, false); w.Code != http.StatusOK || w.Body.Len() == 0 {
 			t.Fatalf("%s: %d", path, w.Code)
 		}
@@ -230,5 +230,39 @@ func TestUserStory1EndToEnd(t *testing.T) {
 	}
 	if w = a.do(http.MethodGet, "/"+code, false, nil, false); w.Code != http.StatusFound {
 		t.Fatalf("URL curta: %d", w.Code)
+	}
+}
+
+func TestCrossOriginProtectionOnlyAppliesToAdminAndAPI(t *testing.T) {
+	a := newApp(t)
+	send := func(method, target string, hdr map[string]string, login bool) int {
+		r := httptest.NewRequest(method, target, strings.NewReader("name=x&shorten_policy=shorten"))
+		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		for k, v := range hdr {
+			r.Header.Set(k, v)
+		}
+		if login {
+			r.AddCookie(a.cookie)
+			r.Header.Set("X-CSRF-Token", a.csrf)
+		}
+		w := httptest.NewRecorder()
+		a.h.ServeHTTP(w, r)
+		return w.Code
+	}
+	// escrita no painel e na API vinda de outro site é recusada, mesmo com sessão e token
+	for _, target := range []string{"/admin/marketplaces", "/admin/login", "/api/v1/marketplaces"} {
+		for _, hdr := range []map[string]string{{"Sec-Fetch-Site": "cross-site"}, {"Origin": "https://evil.example"}} {
+			if code := send(http.MethodPost, target, hdr, true); code != http.StatusForbidden {
+				t.Errorf("POST %s com %v: %d (esperado 403)", target, hdr, code)
+			}
+		}
+	}
+	// mesma origem e clientes sem cabeçalhos de origem seguem
+	if code := send(http.MethodPost, "/admin/marketplaces", map[string]string{"Sec-Fetch-Site": "same-origin"}, true); code != http.StatusSeeOther {
+		t.Errorf("same-origin: %d", code)
+	}
+	// rotas públicas aceitam outros sites (redirecionamento, e o beacon da US3)
+	if code := send(http.MethodGet, "/zzzzzzz", map[string]string{"Sec-Fetch-Site": "cross-site", "Origin": "https://outro.example"}, false); code != http.StatusNotFound {
+		t.Errorf("GET público cross-site: %d", code)
 	}
 }

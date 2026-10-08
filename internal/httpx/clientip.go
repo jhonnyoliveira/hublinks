@@ -11,7 +11,9 @@ import (
 
 func ClientIP(r *http.Request, trusted []netip.Prefix) netip.Addr {
 	remote, _ := netip.ParseAddrPort(r.RemoteAddr)
-	ip := remote.Addr()
+	// Unmap: em soquetes dual-stack o par IPv4 chega como ::ffff:a.b.c.d, que
+	// netip.Prefix.Contains não reconhece como pertencente a um prefixo IPv4.
+	ip := remote.Addr().Unmap()
 	if !contains(trusted, ip) {
 		return ip
 	}
@@ -21,6 +23,7 @@ func ClientIP(r *http.Request, trusted []netip.Prefix) netip.Addr {
 		if err != nil {
 			continue
 		}
+		candidate = candidate.Unmap()
 		if !contains(trusted, candidate) {
 			return candidate
 		}

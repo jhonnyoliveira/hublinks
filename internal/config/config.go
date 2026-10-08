@@ -3,6 +3,7 @@ package config
 
 import (
 	"fmt"
+	"log/slog"
 	"net/netip"
 	"net/url"
 	"strconv"
@@ -74,6 +75,9 @@ func Load(getenv func(string) string) (Config, error) {
 		}
 		c.TrustedProxies = append(c.TrustedProxies, p)
 	}
+	if _, err := time.Parse("15:04", c.MaintenanceAt); err != nil {
+		return c, fmt.Errorf("MAINTENANCE_AT deve estar no formato HH:MM")
+	}
 	if !map[string]bool{"debug": true, "info": true, "warn": true, "error": true}[c.LogLevel] {
 		return c, fmt.Errorf("LOG_LEVEL inválido")
 	}
@@ -96,3 +100,21 @@ func positive(raw string, dst *int) error {
 	*dst = n
 	return nil
 }
+
+const redacted = "[REDACTED]"
+
+// plain não herda os métodos de Config, o que evita recursão em String.
+type plain Config
+
+// String descreve a configuração sem segredos (URL do banco, PEPPER e senha do
+// administrador). Vale também para %v, %+v e para o slog.
+func (c Config) String() string {
+	c.DatabaseURL, c.Pepper, c.AdminPassword = redacted, redacted, redacted
+	return fmt.Sprintf("%+v", plain(c))
+}
+
+// GoString impede que %#v exponha os segredos.
+func (c Config) GoString() string { return c.String() }
+
+// LogValue faz o slog registrar a versão sem segredos.
+func (c Config) LogValue() slog.Value { return slog.StringValue(c.String()) }
