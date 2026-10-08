@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/hublinks/hublinks/internal/admin"
 	"github.com/hublinks/hublinks/internal/api"
+	"github.com/hublinks/hublinks/internal/assets"
 	"github.com/hublinks/hublinks/internal/auth"
 	"github.com/hublinks/hublinks/internal/config"
 	"github.com/hublinks/hublinks/internal/events"
@@ -22,12 +23,17 @@ import (
 func New(pool *pgxpool.Pool, c config.Config) http.Handler {
 	mux := http.NewServeMux()
 	mux.Handle("GET /healthz", httpx.Health(pool))
+	mux.Handle("GET /static/", assets.Handler())
 	mux.Handle("GET /privacidade", web.Privacy(c))
 	sessions := auth.Manager{Pool: pool}
-	mux.Handle("GET /admin/login", admin.Login{Pool: pool, Sessions: sessions})
-	mux.Handle("POST /admin/login", admin.Login{Pool: pool, Sessions: sessions})
+	login := admin.Login{Pool: pool, Sessions: sessions, Limiter: auth.NewLoginLimiter(c.Pepper, c.LoginMaxFailures, c.LoginWindow, c.LoginLockout)}
+	mux.Handle("GET /admin/login", login)
+	mux.Handle("POST /admin/login", login)
 	mux.Handle("POST /admin/logout", sessions.Require(auth.RequireCSRF(admin.Logout(sessions)), false))
 	mux.Handle("GET /admin", sessions.Require(http.HandlerFunc(admin.Dashboard), false))
+	if c.AppEnv == "development" {
+		mux.Handle("GET /admin/ui", sessions.Require(http.HandlerFunc(admin.UI), false))
+	}
 	adminCatalog := admin.Catalog{Store: store.NewCatalog(pool)}
 	mux.Handle("GET /admin/marketplaces", sessions.Require(http.HandlerFunc(adminCatalog.Marketplaces), false))
 	mux.Handle("POST /admin/marketplaces", sessions.Require(auth.RequireCSRF(http.HandlerFunc(adminCatalog.Marketplaces)), false))
@@ -70,6 +76,9 @@ func Run(ctx context.Context, c config.Config) error {
 		return err
 	}
 	if err = (maintenance.Manager{Pool: pool, Config: c}).CheckTimezone(ctx); err != nil {
+		return err
+	}
+	if err = (maintenance.Manager{Pool: pool, Config: c}).Start(ctx); err != nil {
 		return err
 	}
 	s := &http.Server{Addr: c.HTTPAddr, Handler: New(pool, c)}

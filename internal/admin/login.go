@@ -13,6 +13,7 @@ import (
 type Login struct {
 	Pool     *pgxpool.Pool
 	Sessions auth.Manager
+	Limiter  *auth.LoginLimiter
 }
 
 func (l Login) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -25,12 +26,22 @@ func (l Login) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	email := strings.ToLower(strings.TrimSpace(r.FormValue("email")))
+	if l.Limiter != nil && l.Limiter.Blocked(r, email) {
+		l.form(w, r.FormValue("next"), "Muitas tentativas. Aguarde alguns minutos.")
+		return
+	}
 	var id, org uuid.UUID
 	var hash string
 	err := l.Pool.QueryRow(r.Context(), `SELECT u.id,u.password_hash,m.org_id FROM users u JOIN memberships m ON m.user_id=u.id WHERE u.email=$1 AND u.deleted_at IS NULL LIMIT 1`, email).Scan(&id, &hash, &org)
 	if err != nil || !auth.Verify(r.FormValue("password"), hash) {
+		if l.Limiter != nil {
+			l.Limiter.Fail(r, email)
+		}
 		l.form(w, r.FormValue("next"), "E-mail ou senha inválidos")
 		return
+	}
+	if l.Limiter != nil {
+		l.Limiter.Success(r, email)
 	}
 	raw, s, err := l.Sessions.Create(r.Context(), id, org)
 	if err != nil {

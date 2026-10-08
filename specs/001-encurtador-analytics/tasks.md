@@ -91,10 +91,10 @@ Corresponde ao épico 1 e às bases do épico 2.
   - `sessions(token_hash bytea PK, user_id FK, org_id FK, csrf_token text NOT NULL,
     created_at, last_seen_at, expires_at)`;
   - `app_settings(key text PK, value text NOT NULL)`.
-- [ ] T010 Implementar o helper `internal/store/testdb/testdb.go`. `New(t)` lê
+- [X] T010 Implementar o helper `internal/store/testdb/testdb.go`. `New(t)` lê
   `TEST_DATABASE_URL`, faz `t.Skip` com mensagem explícita se ela estiver ausente, cria o banco
   `hl_test_<aleatório>`, aplica as migrações, devolve o pool e remove o banco em `t.Cleanup`.
-- [ ] T011 Escrever teste de integração em `internal/store/migrate_test.go`: aplica as migrações
+- [X] T011 Escrever teste de integração em `internal/store/migrate_test.go`: aplica as migrações
   do zero, verifica que reaplicar não muda nada e que as tabelas de T009 existem.
 - [X] T012 Implementar `hublinks migrate [up|status]` em `cmd/hublinks/migrate.go`.
 
@@ -493,7 +493,7 @@ nos dois temas, sem rolagem horizontal e com o tema lembrado.
 - [ ] T082 [P] [US4] Garantir foco visível (`focus-visible`), navegação por teclado no menu, no
   modal e nas abas, e contraste AA dos tokens nos dois temas, em `web/assets/app.css` e
   `web/templates/components/*`.
-- [ ] T083 [US4] Implementar `GET /admin/ui` em `internal/admin/ui.go` e
+- [X] T083 [US4] Implementar `GET /admin/ui` em `internal/admin/ui.go` e
   `web/templates/admin/ui.html`, mostrando todos os componentes nos dois temas, registrado só
   com `APP_ENV=development`.
 - [ ] T084 [US4] Escrever o guia de estilo `docs/guia-de-estilo.md` (tokens, componentes, quando
@@ -588,7 +588,7 @@ contagens (idênticas); reexecutar (sem mudança); um link na lixeira há 31 dia
   `purged_at` e `DELETE FROM visitor_seen` para links, e invalidação do cache de resolução.
 - [ ] T097 [US6] Implementar `internal/maintenance/timezone.go` (fixa e verifica `REPORT_TZ`) e
   chamá-lo na partida em `internal/server/server.go`.
-- [ ] T098 [US6] Implementar `internal/maintenance/scheduler.go`: execução diária em
+- [X] T098 [US6] Implementar `internal/maintenance/scheduler.go`: execução diária em
   `MAINTENANCE_AT` no `REPORT_TZ`, protegida por `pg_try_advisory_lock`, com métrica de duração
   e falhas; ligado em `serve`.
 - [ ] T099 [US6] Implementar `hublinks maintenance run [--day YYYY-MM-DD]` em

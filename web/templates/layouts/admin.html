@@ -1,5 +1,5 @@
 {{define "admin"}}<!doctype html>
 <html lang="pt-BR">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">{{template "head" .}}</head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="/static/css/app.dev.css">{{template "head" .}}</head>
 <body><header><a href="/admin">Hub Links</a>{{if .CSRF}}<form action="/admin/logout" method="post"><input type="hidden" name="csrf_token" value="{{.CSRF}}"><button>Sair</button></form>{{end}}</header><main>{{template "content" .}}</main></body>
 </html>{{end}}

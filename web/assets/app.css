@@ -1,4 +1,4 @@
 @import "tailwindcss";
 @theme { --color-brand: #2563eb; --color-surface: #ffffff; --color-ink: #172033; --radius-card: .75rem; }
 @media (prefers-color-scheme: dark) { :root { --color-surface:#111827; --color-ink:#f8fafc; } }
-* { box-sizing: border-box; } body { margin:0; color:var(--color-ink); background:var(--color-surface); font-family:Arial,sans-serif; } :focus-visible { outline:3px solid #f59e0b; outline-offset:2px; }
+* { box-sizing: border-box; } body { margin:0; color:var(--color-ink); background:var(--color-surface); font-family:Arial,sans-serif; } :focus-visible { outline:3px solid #f59e0b; outline-offset:2px; } .card,.table-wrap { border:1px solid color-mix(in srgb,var(--color-ink) 20%,transparent); border-radius:var(--radius-card); padding:1rem; } .badge,.toast { display:inline-block; padding:.25rem .5rem; border-radius:999px; background:#dbeafe; } .empty-state { padding:2rem; text-align:center; } .skeleton { opacity:.7; }

@@ -22,3 +22,13 @@ func TestPublicPreviewUsesTemplateEscaping(t *testing.T) {
 		t.Fatal("aviso de privacidade ausente")
 	}
 }
+
+func TestAdminUIRendersComponents(t *testing.T) {
+	var got bytes.Buffer
+	if err := Render(&got, "admin", "admin/ui", struct{ CSRF string }{}); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(got.String(), "Guia de componentes") {
+		t.Fatal("guia não renderizado")
+	}
+}

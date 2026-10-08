@@ -1,0 +1,1 @@
+{{define "field"}}<label for="{{.ID}}">{{.Label}}</label><input id="{{.ID}}" name="{{.Name}}" type="{{if .Type}}{{.Type}}{{else}}text{{end}}"{{if .Required}} required{{end}}{{if .Error}} aria-describedby="{{.ID}}-error"{{end}}>{{if .Error}}<p id="{{.ID}}-error" role="alert">{{.Error}}</p>{{end}}{{end}}

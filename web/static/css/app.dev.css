@@ -1,0 +1,6 @@
+/* Fallback de desenvolvimento. O comando make css gera o arquivo versionado. */
+body { font-family: system-ui, sans-serif; line-height: 1.5; margin: 0 auto; max-width: 72rem; padding: 1rem; }
+header, nav { display: flex; gap: 1rem; align-items: center; }
+form { display: grid; gap: .5rem; max-width: 32rem; margin: 1rem 0; }
+input, select, button { font: inherit; padding: .5rem; }
+aside { border-top: 1px solid #ccc; margin-top: 2rem; padding-top: 1rem; }

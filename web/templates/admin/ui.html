@@ -1,0 +1,2 @@
+{{define "head"}}<title>Guia de componentes | Hub Links</title>{{end}}
+{{define "content"}}<h1>Guia de componentes</h1><section><h2>Botões e selo</h2>{{template "button" (dict "Type" "button" "Label" "Ação")}}{{template "badge" "Ativo"}}</section><section><h2>Campo</h2>{{template "field" (dict "ID" "example" "Name" "example" "Label" "Exemplo" "Type" "text" "Required" true)}}</section><section><h2>Estados</h2>{{template "empty_state" "Cadastre seu primeiro link."}}{{template "skeleton" .}}</section>{{end}}
