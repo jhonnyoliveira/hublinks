@@ -1,0 +1,2 @@
+{{define "head"}}<title>Lixeira | Hub Links</title>{{end}}
+{{define "content"}}<h1>Lixeira</h1><p>Os itens podem ser restaurados durante 30 dias.</p><ul>{{range .Items}}<li><strong>{{.Name}}</strong> ({{.Type}}) — {{.Days}} dias restantes <form method="post" action="/admin/{{if eq .Type "marketplace"}}marketplaces{{else if eq .Type "canal"}}channels{{else}}links{{end}}/{{.ID}}/restore"><input type="hidden" name="csrf_token" value="{{$.CSRF}}"><button>Restaurar</button></form></li>{{else}}<li>A lixeira está vazia.</li>{{end}}</ul>{{end}}

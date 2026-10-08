@@ -199,7 +199,7 @@ acessá-la. Deve redirecionar `302` ao destino; código ou canal inexistente →
 
 ### Tests for User Story 1
 
-- [ ] T033 [P] [US1] Testes unitários em `internal/domain/validate_test.go`:
+- [X] T033 [P] [US1] Testes unitários em `internal/domain/validate_test.go`:
   - URL de destino aceita só `http`/`https` com host, "até 2048 caracteres";
   - `image_url` opcional, também `http`/`https`;
   - título "1–200 caracteres";
@@ -208,7 +208,7 @@ acessá-la. Deve redirecionar `302` ao destino; código ou canal inexistente →
   - segmento `^[a-z0-9][a-z0-9-]{0,19}$`, minúsculo, fora de `api`, `admin`, `p`, `static`,
     `healthz`, `beacon` e `privacidade`;
   - política ∈ {`shorten`,`direct`}.
-- [ ] T034 [P] [US1] Testes unitários em `internal/domain/code_test.go`: o código gerado casa
+- [X] T034 [P] [US1] Testes unitários em `internal/domain/code_test.go`: o código gerado casa
   `^[0-9a-z]{7}$`, nunca é `healthz`, e há distribuição sobre os 36 símbolos.
 - [ ] T035 [P] [US1] Testes de integração em `internal/store/catalog_test.go`:
   - CRUD dos três repositórios sempre filtrado por `org_id` (ID de outra org → `ErrNotFound`);

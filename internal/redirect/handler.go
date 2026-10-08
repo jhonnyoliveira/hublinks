@@ -1,10 +1,11 @@
 package redirect
 
 import (
+	"context"
+	"github.com/google/uuid"
 	"github.com/hublinks/hublinks/internal/domain"
 	"github.com/hublinks/hublinks/internal/events"
 	"github.com/hublinks/hublinks/internal/httpx"
-	"github.com/hublinks/hublinks/internal/store"
 	webtmpl "github.com/hublinks/hublinks/web"
 	"net/http"
 	"net/netip"
@@ -13,12 +14,16 @@ import (
 )
 
 type Handler struct {
-	Catalog         *store.Catalog
+	Catalog         Catalog
 	Cache           *Cache
 	Queue           *events.Queue
 	Pepper, BaseURL string
 	TrustedProxies  []netip.Prefix
 	Bots            *BotDetector
+}
+type Catalog interface {
+	Resolve(context.Context, string) (domain.AffiliateLink, error)
+	Channel(context.Context, uuid.UUID, string) (uuid.UUID, error)
 }
 
 // ServeHTTP only accepts the public one- and two-part URL forms.

@@ -4,7 +4,7 @@ import "testing"
 
 func TestNewCode(t *testing.T) {
 	seen := map[byte]bool{}
-	for range 200 {
+	for range 5000 {
 		code, err := NewCode()
 		if err != nil {
 			t.Fatal(err)
@@ -16,7 +16,7 @@ func TestNewCode(t *testing.T) {
 			seen[b] = true
 		}
 	}
-	if len(seen) < 20 {
+	if len(seen) != 36 {
 		t.Fatalf("distribuição insuficiente: %d", len(seen))
 	}
 }

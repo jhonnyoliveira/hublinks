@@ -13,29 +13,40 @@ const (
 )
 
 type Marketplace struct {
-	ID, OrgID            uuid.UUID
-	Name                 string
-	ShortenPolicy        Policy
-	CreatedAt, UpdatedAt time.Time
-	DeletedAt, PurgedAt  *time.Time
+	ID            uuid.UUID  `json:"id"`
+	OrgID         uuid.UUID  `json:"-"`
+	Name          string     `json:"name"`
+	ShortenPolicy Policy     `json:"shorten_policy"`
+	CreatedAt     time.Time  `json:"created_at"`
+	UpdatedAt     time.Time  `json:"updated_at"`
+	DeletedAt     *time.Time `json:"deleted_at"`
+	PurgedAt      *time.Time `json:"-"`
 }
 type Channel struct {
-	ID, OrgID            uuid.UUID
-	Name, Segment        string
-	CreatedAt, UpdatedAt time.Time
-	DeletedAt, PurgedAt  *time.Time
+	ID        uuid.UUID  `json:"id"`
+	OrgID     uuid.UUID  `json:"-"`
+	Name      string     `json:"name"`
+	Segment   string     `json:"segment"`
+	CreatedAt time.Time  `json:"created_at"`
+	UpdatedAt time.Time  `json:"updated_at"`
+	DeletedAt *time.Time `json:"deleted_at"`
+	PurgedAt  *time.Time `json:"-"`
 }
 type AffiliateLink struct {
-	ID, OrgID, MarketplaceID uuid.UUID
-	Title                    string
-	ImageURL                 *string
-	DestinationURL           string
-	ShortenPolicyOverride    *Policy
-	Active                   bool
-	Code                     string
-	Marketplace              Marketplace
-	CreatedAt, UpdatedAt     time.Time
-	DeletedAt, PurgedAt      *time.Time
+	ID                    uuid.UUID   `json:"id"`
+	OrgID                 uuid.UUID   `json:"-"`
+	MarketplaceID         uuid.UUID   `json:"-"`
+	Title                 string      `json:"title"`
+	ImageURL              *string     `json:"image_url"`
+	DestinationURL        string      `json:"destination_url"`
+	ShortenPolicyOverride *Policy     `json:"shorten_policy_override"`
+	Active                bool        `json:"active"`
+	Code                  string      `json:"code"`
+	Marketplace           Marketplace `json:"marketplace"`
+	CreatedAt             time.Time   `json:"created_at"`
+	UpdatedAt             time.Time   `json:"updated_at"`
+	DeletedAt             *time.Time  `json:"deleted_at"`
+	PurgedAt              *time.Time  `json:"-"`
 }
 
 func (l AffiliateLink) EffectivePolicy() Policy {

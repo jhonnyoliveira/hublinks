@@ -11,6 +11,7 @@ import (
 	"github.com/hublinks/hublinks/internal/httpx"
 	"github.com/hublinks/hublinks/internal/maintenance"
 	"github.com/hublinks/hublinks/internal/redirect"
+	"github.com/hublinks/hublinks/internal/service"
 	"github.com/hublinks/hublinks/internal/stats"
 	"github.com/hublinks/hublinks/internal/store"
 	"github.com/hublinks/hublinks/internal/web"
@@ -34,32 +35,42 @@ func New(pool *pgxpool.Pool, c config.Config) http.Handler {
 	if c.AppEnv == "development" {
 		mux.Handle("GET /admin/ui", sessions.Require(http.HandlerFunc(admin.UI), false))
 	}
-	adminCatalog := admin.Catalog{Store: store.NewCatalog(pool)}
+	resolutionCache := redirect.NewCache()
+	catalogService := service.Catalog{Store: store.NewCatalog(pool), Cache: resolutionCache, BaseURL: c.BaseURL}
+	adminCatalog := admin.Catalog{Service: catalogService}
 	mux.Handle("GET /admin/marketplaces", sessions.Require(http.HandlerFunc(adminCatalog.Marketplaces), false))
 	mux.Handle("POST /admin/marketplaces", sessions.Require(auth.RequireCSRF(http.HandlerFunc(adminCatalog.Marketplaces)), false))
 	mux.Handle("GET /admin/channels", sessions.Require(http.HandlerFunc(adminCatalog.Channels), false))
 	mux.Handle("POST /admin/channels", sessions.Require(auth.RequireCSRF(http.HandlerFunc(adminCatalog.Channels)), false))
 	mux.Handle("GET /admin/links", sessions.Require(http.HandlerFunc(adminCatalog.Links), false))
 	mux.Handle("POST /admin/links", sessions.Require(auth.RequireCSRF(http.HandlerFunc(adminCatalog.Links)), false))
-	catalogAPI := api.Catalog{Store: store.NewCatalog(pool)}
+	mux.Handle("GET /admin/lixeira", sessions.Require(http.HandlerFunc(adminCatalog.Trash), false))
+	mux.Handle("POST /admin/marketplaces/{id}/{action}", sessions.Require(auth.RequireCSRF(http.HandlerFunc(adminCatalog.MarketplaceAction)), false))
+	mux.Handle("POST /admin/channels/{id}/{action}", sessions.Require(auth.RequireCSRF(http.HandlerFunc(adminCatalog.ChannelAction)), false))
+	mux.Handle("POST /admin/links/{id}/{action}", sessions.Require(auth.RequireCSRF(http.HandlerFunc(adminCatalog.LinkAction)), false))
+	catalogAPI := api.Catalog{Service: catalogService}
 	mux.Handle("POST /api/v1/marketplaces", sessions.Require(auth.RequireCSRF(http.HandlerFunc(catalogAPI.Marketplace)), true))
 	mux.Handle("GET /api/v1/marketplaces", sessions.Require(http.HandlerFunc(catalogAPI.Marketplace), true))
+	mux.Handle("GET /api/v1/marketplaces/{id}", sessions.Require(http.HandlerFunc(catalogAPI.MarketplaceItem), true))
 	mux.Handle("DELETE /api/v1/marketplaces/{id}", sessions.Require(auth.RequireCSRF(http.HandlerFunc(catalogAPI.MarketplaceItem)), true))
 	mux.Handle("PATCH /api/v1/marketplaces/{id}", sessions.Require(auth.RequireCSRF(http.HandlerFunc(catalogAPI.MarketplaceItem)), true))
 	mux.Handle("POST /api/v1/marketplaces/{id}/restore", sessions.Require(auth.RequireCSRF(http.HandlerFunc(catalogAPI.MarketplaceRestore)), true))
 	mux.Handle("POST /api/v1/channels", sessions.Require(auth.RequireCSRF(http.HandlerFunc(catalogAPI.Channel)), true))
 	mux.Handle("GET /api/v1/channels", sessions.Require(http.HandlerFunc(catalogAPI.Channel), true))
+	mux.Handle("GET /api/v1/channels/{id}", sessions.Require(http.HandlerFunc(catalogAPI.ChannelItem), true))
 	mux.Handle("DELETE /api/v1/channels/{id}", sessions.Require(auth.RequireCSRF(http.HandlerFunc(catalogAPI.ChannelItem)), true))
 	mux.Handle("PATCH /api/v1/channels/{id}", sessions.Require(auth.RequireCSRF(http.HandlerFunc(catalogAPI.ChannelItem)), true))
 	mux.Handle("POST /api/v1/channels/{id}/restore", sessions.Require(auth.RequireCSRF(http.HandlerFunc(catalogAPI.ChannelRestore)), true))
 	mux.Handle("POST /api/v1/affiliate-links", sessions.Require(auth.RequireCSRF(http.HandlerFunc(catalogAPI.Link)), true))
 	mux.Handle("GET /api/v1/affiliate-links", sessions.Require(http.HandlerFunc(catalogAPI.Link), true))
+	mux.Handle("GET /api/v1/affiliate-links/{id}", sessions.Require(http.HandlerFunc(catalogAPI.LinkItem), true))
 	mux.Handle("DELETE /api/v1/affiliate-links/{id}", sessions.Require(auth.RequireCSRF(http.HandlerFunc(catalogAPI.LinkItem)), true))
+	mux.Handle("PATCH /api/v1/affiliate-links/{id}", sessions.Require(auth.RequireCSRF(http.HandlerFunc(catalogAPI.LinkItem)), true))
 	mux.Handle("POST /api/v1/affiliate-links/{id}/restore", sessions.Require(auth.RequireCSRF(http.HandlerFunc(catalogAPI.LinkRestore)), true))
 	mux.Handle("GET /api/v1/stats/summary", sessions.Require(http.HandlerFunc(api.Stats{Service: stats.Service{Pool: pool, TZ: c.ReportTZ}}.Summary), true))
 	queue := events.NewQueue(c.EventQueueSize, c.EventBatchSize, c.EventFlushInterval, events.DBWriter{Pool: pool})
 	go queue.Run(context.Background())
-	public := &redirect.Handler{Catalog: store.NewCatalog(pool), Cache: redirect.NewCache(), Queue: queue, Pepper: c.Pepper, BaseURL: c.BaseURL, TrustedProxies: c.TrustedProxies, Bots: redirect.NewBotDetector(c.BotDistinctCodes, c.BotWindow)}
+	public := &redirect.Handler{Catalog: store.NewCatalog(pool), Cache: resolutionCache, Queue: queue, Pepper: c.Pepper, BaseURL: c.BaseURL, TrustedProxies: c.TrustedProxies, Bots: redirect.NewBotDetector(c.BotDistinctCodes, c.BotWindow)}
 	mux.Handle("GET /", httpx.NewRateLimiter(c.Pepper, c.PublicRateLimit).Middleware(public))
 	return httpx.Log(mux, slog.New(slog.NewJSONHandler(os.Stdout, nil)))
 }
