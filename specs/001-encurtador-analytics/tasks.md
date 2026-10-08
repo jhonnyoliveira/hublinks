@@ -159,7 +159,7 @@ Corresponde ao épico 1 e às bases do épico 2.
   - cores semânticas para os modos claro e escuro (`.dark`), com contraste AA;
   - espaçamentos, raios, sombras e tipografia Inter;
   - `@font-face` local com `font-display: swap` apontando para `web/static/fonts/`.
-- [ ] T027 [P] Vendorizar em `web/static/vendor/` as versões fixadas de `htmx.min.js` (2.x),
+- [X] T027 [P] Vendorizar em `web/static/vendor/` as versões fixadas de `htmx.min.js` (2.x),
   `alpine.min.js` (3.x) e `uplot.iife.min.js`/`uPlot.min.css`, e a fonte Inter woff2 em
   `web/static/fonts/`, registrando versões e licenças em `web/static/vendor/VERSIONS.md`.
 - [ ] T028 Implementar `internal/assets/assets.go` com `embed` de `web/static` e `web/templates`,
@@ -282,14 +282,14 @@ acessá-la. Deve redirecionar `302` ao destino; código ou canal inexistente →
   - `404` HTML via `web/templates/public/404.html`;
   - `302` com `Cache-Control: no-store` e `Referrer-Policy: no-referrer-when-downgrade`;
   - deixa um ponto de extensão `Recorder` (no-op até a US2).
-- [ ] T048 [US1] Implementar as telas de marketplaces em `internal/admin/marketplaces.go` e
+- [X] T048 [US1] Implementar as telas de marketplaces em `internal/admin/marketplaces.go` e
   `web/templates/admin/marketplaces/*.html`:
   - listagem HTMX com busca e paginação e CRUD em modal;
   - confirmação de exclusão; o `409` lista os links que bloqueiam.
-- [ ] T049 [US1] Implementar as telas de canais em `internal/admin/channels.go` e
+- [X] T049 [US1] Implementar as telas de canais em `internal/admin/channels.go` e
   `web/templates/admin/channels/*.html`, com listagem, CRUD em modal e confirmação de exclusão
   que exibe `active_links_count` ("N links terão a URL deste canal invalidada").
-- [ ] T050 [US1] Implementar as telas de links em `internal/admin/links.go` e
+- [X] T050 [US1] Implementar as telas de links em `internal/admin/links.go` e
   `web/templates/admin/links/{index,form,show}.html`:
   - listagem com busca, filtro por marketplace e paginação;
   - formulário com validação inline;
@@ -298,10 +298,10 @@ acessá-la. Deve redirecionar `302` ao destino; código ou canal inexistente →
   - política `direct` mostra só a URL original e o selo "não rastreável";
   - controle "Ativo" (interruptor acessível, `role="switch"`) no formulário e alternância rápida
     via HTMX na listagem, com selo "Inativo"; um link inativo responde `404` (FR-005, FR-011).
-- [ ] T051 [US1] Implementar a lixeira em `internal/admin/trash.go` e
+- [X] T051 [US1] Implementar a lixeira em `internal/admin/trash.go` e
   `web/templates/admin/trash.html` (itens com dias restantes até `TRASH_RETENTION_DAYS` e ação
   de restaurar), mais as rotas `delete`/`restore` dos três CRUDs.
-- [ ] T052 [US1] Registrar as rotas de catálogo, painel e redirecionamento em
+- [X] T052 [US1] Registrar as rotas de catálogo, painel e redirecionamento em
   `internal/server/server.go`, garantindo a precedência das rotas literais (`/healthz`,
   `/privacidade`, `/admin/`, `/api/v1/`, `/static/`) sobre `/{code}` e `/{segment}/{code}`, com
   teste em `internal/server/routes_test.go`.

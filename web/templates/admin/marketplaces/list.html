@@ -1,0 +1,10 @@
+{{define "marketplaces_list"}}<div id="marketplaces-list">
+{{if .Items}}<div class="table-wrap"><table>
+<caption class="sr-only">Lista de marketplaces</caption>
+<thead><tr><th scope="col">Nome</th><th scope="col">Política</th><th scope="col"><span class="sr-only">Ações</span></th></tr></thead>
+<tbody>{{range .Items}}<tr>
+<td>{{.Name}}</td><td>{{template "policy_badge" .ShortenPolicy}}</td>
+<td class="actions"><button class="btn btn-sm" hx-get="/admin/marketplaces/{{.ID}}/edit" hx-target="#modal-body" hx-swap="innerHTML" aria-label="Editar {{.Name}}">Editar</button> <button class="btn btn-sm" hx-get="/admin/marketplaces/{{.ID}}/delete" hx-target="#modal-body" hx-swap="innerHTML" aria-label="Excluir {{.Name}}">Excluir</button></td>
+</tr>{{end}}</tbody></table>{{template "pager" .Pager}}</div>
+{{else}}<div class="card empty">{{if .Q}}Nenhum marketplace encontrado para “{{.Q}}”.{{else}}Nenhum marketplace cadastrado. Crie o primeiro para começar a cadastrar links.{{end}}</div>{{end}}
+</div>{{end}}

@@ -57,7 +57,7 @@ func (l Login) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 func (l Login) form(w http.ResponseWriter, next, msg string) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := webtmpl.Render(w, "admin", "admin/login", struct{ Next, Error string }{next, msg}); err != nil {
+	if err := webtmpl.Render(w, "admin", "admin/login", struct{ Next, Error, CSRF string }{next, msg, ""}); err != nil {
 		http.Error(w, "erro ao renderizar página", http.StatusInternalServerError)
 	}
 }

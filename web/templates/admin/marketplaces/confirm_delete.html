@@ -1,0 +1,12 @@
+{{define "marketplace_confirm_delete"}}
+<h2 id="modal-title">Excluir marketplace</h2>
+{{if .Blocking}}
+<p class="alert alert-danger" role="alert">“{{.Name}}” não pode ser excluído porque ainda tem {{len .Blocking}} {{if eq (len .Blocking) 1}}link{{else}}links{{end}} fora da lixeira. Exclua ou mova estes links antes:</p>
+<ul>{{range .Blocking}}<li><a href="/admin/links/{{.ID}}">{{.Title}}</a></li>{{end}}</ul>
+<div class="modal-actions"><button type="button" class="btn" data-modal-close>Fechar</button></div>
+{{else}}
+<form hx-post="/admin/marketplaces/{{.ID}}/delete" hx-target="#modal-body" hx-swap="innerHTML" hx-disabled-elt="find button[type=submit]">
+  <input type="hidden" name="csrf_token" value="{{.CSRF}}">
+  <p>Enviar “{{.Name}}” para a lixeira? Você poderá restaurá-lo por {{.RetentionDays}} dias.</p>
+  <div class="modal-actions"><button type="button" class="btn" data-modal-close>Cancelar</button><button type="submit" class="btn btn-danger">Enviar para a lixeira</button></div>
+</form>{{end}}{{end}}

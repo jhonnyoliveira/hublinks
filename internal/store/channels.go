@@ -99,10 +99,10 @@ func (c *Catalog) RestoreChannel(ctx context.Context, orgID, id uuid.UUID) error
 
 func (c *Catalog) UpdateChannel(ctx context.Context, orgID, id uuid.UUID, name, segment *string) error {
 	if name != nil && !domain.Text(*name, 1, 60) {
-		return domain.ValidationError{Fields: map[string]string{"name": "nome inválido"}}
+		return domain.ValidationError{Fields: map[string]string{"name": "nome deve ter de 1 a 60 caracteres"}}
 	}
 	if segment != nil && !domain.Segment(*segment) {
-		return domain.ValidationError{Fields: map[string]string{"segment": "segmento inválido"}}
+		return domain.ValidationError{Fields: map[string]string{"segment": "segmento inválido ou reservado"}}
 	}
 	tag, err := c.Pool.Exec(ctx, "UPDATE channels SET name=COALESCE($3,name),segment=COALESCE($4,segment),updated_at=$5 WHERE id=$1 AND org_id=$2 AND deleted_at IS NULL AND purged_at IS NULL", id, orgID, name, segment, time.Now().UTC())
 	if err != nil {

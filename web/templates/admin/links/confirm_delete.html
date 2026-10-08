@@ -1,0 +1,7 @@
+{{define "link_confirm_delete"}}
+<h2 id="modal-title">Excluir link</h2>
+<form hx-post="/admin/links/{{.ID}}/delete" hx-target="#modal-body" hx-swap="innerHTML" hx-disabled-elt="find button[type=submit]">
+  <input type="hidden" name="csrf_token" value="{{.CSRF}}">
+  <p>Enviar “{{.Title}}” para a lixeira? O código e as URLs deixam de funcionar (“não encontrado”) até você restaurá-lo, o que é possível por {{.RetentionDays}} dias.</p>
+  <div class="modal-actions"><button type="button" class="btn" data-modal-close>Cancelar</button><button type="submit" class="btn btn-danger">Enviar para a lixeira</button></div>
+</form>{{end}}

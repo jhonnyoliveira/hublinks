@@ -123,7 +123,7 @@ func (c *Catalog) RestoreMarketplace(ctx context.Context, orgID, id uuid.UUID) e
 
 func (c *Catalog) UpdateMarketplace(ctx context.Context, orgID, id uuid.UUID, name *string, policy *domain.Policy) error {
 	if name != nil && !domain.Text(*name, 1, 80) {
-		return domain.ValidationError{Fields: map[string]string{"name": "nome inválido"}}
+		return domain.ValidationError{Fields: map[string]string{"name": "nome deve ter de 1 a 80 caracteres"}}
 	}
 	if policy != nil && !domain.PolicyValid(*policy) {
 		return domain.ValidationError{Fields: map[string]string{"shorten_policy": "política inválida"}}

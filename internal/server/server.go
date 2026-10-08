@@ -37,17 +37,37 @@ func New(pool *pgxpool.Pool, c config.Config) http.Handler {
 	}
 	resolutionCache := redirect.NewCache()
 	catalogService := service.Catalog{Store: store.NewCatalog(pool), Cache: resolutionCache, BaseURL: c.BaseURL}
-	adminCatalog := admin.Catalog{Service: catalogService}
-	mux.Handle("GET /admin/marketplaces", sessions.Require(http.HandlerFunc(adminCatalog.Marketplaces), false))
-	mux.Handle("POST /admin/marketplaces", sessions.Require(auth.RequireCSRF(http.HandlerFunc(adminCatalog.Marketplaces)), false))
-	mux.Handle("GET /admin/channels", sessions.Require(http.HandlerFunc(adminCatalog.Channels), false))
-	mux.Handle("POST /admin/channels", sessions.Require(auth.RequireCSRF(http.HandlerFunc(adminCatalog.Channels)), false))
-	mux.Handle("GET /admin/links", sessions.Require(http.HandlerFunc(adminCatalog.Links), false))
-	mux.Handle("POST /admin/links", sessions.Require(auth.RequireCSRF(http.HandlerFunc(adminCatalog.Links)), false))
-	mux.Handle("GET /admin/lixeira", sessions.Require(http.HandlerFunc(adminCatalog.Trash), false))
-	mux.Handle("POST /admin/marketplaces/{id}/{action}", sessions.Require(auth.RequireCSRF(http.HandlerFunc(adminCatalog.MarketplaceAction)), false))
-	mux.Handle("POST /admin/channels/{id}/{action}", sessions.Require(auth.RequireCSRF(http.HandlerFunc(adminCatalog.ChannelAction)), false))
-	mux.Handle("POST /admin/links/{id}/{action}", sessions.Require(auth.RequireCSRF(http.HandlerFunc(adminCatalog.LinkAction)), false))
+	adminCatalog := admin.Catalog{Service: catalogService, TrashRetentionDays: c.TrashRetentionDays}
+	// view exige sessão; write exige sessão e token CSRF (e origem igual ao site).
+	view := func(h http.HandlerFunc) http.Handler { return sessions.Require(h, false) }
+	write := func(h http.HandlerFunc) http.Handler { return sessions.Require(auth.RequireCSRF(h), false) }
+	mux.Handle("GET /admin/marketplaces", view(adminCatalog.Marketplaces))
+	mux.Handle("GET /admin/marketplaces/new", view(adminCatalog.MarketplaceNew))
+	mux.Handle("POST /admin/marketplaces", write(adminCatalog.MarketplaceCreate))
+	mux.Handle("GET /admin/marketplaces/{id}/edit", view(adminCatalog.MarketplaceEdit))
+	mux.Handle("POST /admin/marketplaces/{id}", write(adminCatalog.MarketplaceUpdate))
+	mux.Handle("GET /admin/marketplaces/{id}/delete", view(adminCatalog.MarketplaceConfirmDelete))
+	mux.Handle("POST /admin/marketplaces/{id}/delete", write(adminCatalog.MarketplaceDelete))
+	mux.Handle("POST /admin/marketplaces/{id}/restore", write(adminCatalog.MarketplaceRestore))
+	mux.Handle("GET /admin/channels", view(adminCatalog.Channels))
+	mux.Handle("GET /admin/channels/new", view(adminCatalog.ChannelNew))
+	mux.Handle("POST /admin/channels", write(adminCatalog.ChannelCreate))
+	mux.Handle("GET /admin/channels/{id}/edit", view(adminCatalog.ChannelEdit))
+	mux.Handle("POST /admin/channels/{id}", write(adminCatalog.ChannelUpdate))
+	mux.Handle("GET /admin/channels/{id}/delete", view(adminCatalog.ChannelConfirmDelete))
+	mux.Handle("POST /admin/channels/{id}/delete", write(adminCatalog.ChannelDelete))
+	mux.Handle("POST /admin/channels/{id}/restore", write(adminCatalog.ChannelRestore))
+	mux.Handle("GET /admin/links", view(adminCatalog.Links))
+	mux.Handle("GET /admin/links/new", view(adminCatalog.LinkNew))
+	mux.Handle("POST /admin/links", write(adminCatalog.LinkCreate))
+	mux.Handle("GET /admin/links/{id}", view(adminCatalog.LinkShow))
+	mux.Handle("GET /admin/links/{id}/edit", view(adminCatalog.LinkEdit))
+	mux.Handle("POST /admin/links/{id}", write(adminCatalog.LinkUpdate))
+	mux.Handle("POST /admin/links/{id}/toggle", write(adminCatalog.LinkToggle))
+	mux.Handle("GET /admin/links/{id}/delete", view(adminCatalog.LinkConfirmDelete))
+	mux.Handle("POST /admin/links/{id}/delete", write(adminCatalog.LinkDelete))
+	mux.Handle("POST /admin/links/{id}/restore", write(adminCatalog.LinkRestore))
+	mux.Handle("GET /admin/lixeira", view(adminCatalog.Trash))
 	catalogAPI := api.Catalog{Service: catalogService}
 	mux.Handle("POST /api/v1/marketplaces", sessions.Require(auth.RequireCSRF(http.HandlerFunc(catalogAPI.Marketplace)), true))
 	mux.Handle("GET /api/v1/marketplaces", sessions.Require(http.HandlerFunc(catalogAPI.Marketplace), true))
@@ -68,6 +88,12 @@ func New(pool *pgxpool.Pool, c config.Config) http.Handler {
 	mux.Handle("PATCH /api/v1/affiliate-links/{id}", sessions.Require(auth.RequireCSRF(http.HandlerFunc(catalogAPI.LinkItem)), true))
 	mux.Handle("POST /api/v1/affiliate-links/{id}/restore", sessions.Require(auth.RequireCSRF(http.HandlerFunc(catalogAPI.LinkRestore)), true))
 	mux.Handle("GET /api/v1/stats/summary", sessions.Require(http.HandlerFunc(api.Stats{Service: stats.Service{Pool: pool, TZ: c.ReportTZ}}.Summary), true))
+	// Caminhos desconhecidos sob /admin/ e /api/v1/ nunca chegam ao redirecionamento
+	// público: exigem sessão e respondem "não encontrado" no formato da área.
+	mux.Handle("GET /admin/", sessions.Require(http.NotFoundHandler(), false))
+	mux.Handle("GET /api/v1/", sessions.Require(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		httpx.APIError(w, http.StatusNotFound, "not_found", "não encontrado", nil)
+	}), true))
 	queue := events.NewQueue(c.EventQueueSize, c.EventBatchSize, c.EventFlushInterval, events.DBWriter{Pool: pool})
 	go queue.Run(context.Background())
 	recorder := redirect.EventRecorder{Queue: queue, Pepper: c.Pepper, TrustedProxies: c.TrustedProxies, Bots: redirect.NewBotDetector(c.BotDistinctCodes, c.BotWindow)}

@@ -150,3 +150,72 @@ func TestCreateLinkRollsBackWhenCodesKeepColliding(t *testing.T) {
 		t.Fatalf("link sem código ficou gravado: %d links", n)
 	}
 }
+
+func TestGetLinkIsScopedAndHonoursTrash(t *testing.T) {
+	ctx := context.Background()
+	c := store.NewCatalog(testdb.New(t))
+	orgA, orgB := catalogOrg(t, c), catalogOrg(t, c)
+	mp, _ := c.CreateMarketplace(ctx, orgA, "Loja", domain.PolicyShorten)
+	l, err := c.CreateLink(ctx, domain.AffiliateLink{OrgID: orgA, MarketplaceID: mp.ID, Title: "P", DestinationURL: "https://example.com", Active: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := c.GetLink(ctx, orgA, l.ID, false)
+	if err != nil || got.Code != l.Code || got.Marketplace.Name != "Loja" {
+		t.Fatalf("detalhe: %+v %v", got, err)
+	}
+	if _, err = c.GetLink(ctx, orgB, l.ID, false); !errors.Is(err, domain.ErrNotFound) {
+		t.Fatalf("outra org: %v", err)
+	}
+	if _, err = c.GetLink(ctx, orgA, l.ID, true); !errors.Is(err, domain.ErrNotFound) {
+		t.Fatalf("link ativo não está na lixeira: %v", err)
+	}
+	if err = c.SoftDeleteLink(ctx, orgA, l.ID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = c.GetLink(ctx, orgA, l.ID, false); !errors.Is(err, domain.ErrNotFound) {
+		t.Fatalf("link na lixeira não aparece fora dela: %v", err)
+	}
+	if got, err = c.GetLink(ctx, orgA, l.ID, true); err != nil || got.DeletedAt == nil {
+		t.Fatalf("lixeira: %+v %v", got, err)
+	}
+	if _, err = c.Pool.Exec(ctx, "UPDATE affiliate_links SET purged_at=now() WHERE id=$1", l.ID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = c.GetLink(ctx, orgA, l.ID, true); !errors.Is(err, domain.ErrNotFound) {
+		t.Fatalf("excluído definitivamente: %v", err)
+	}
+}
+
+func TestUpdateLinkClearsOverrideAndImage(t *testing.T) {
+	ctx := context.Background()
+	c := store.NewCatalog(testdb.New(t))
+	org := catalogOrg(t, c)
+	mp, _ := c.CreateMarketplace(ctx, org, "Loja", domain.PolicyShorten)
+	direct, image := domain.PolicyDirect, "https://example.com/i.png"
+	l, err := c.CreateLink(ctx, domain.AffiliateLink{OrgID: org, MarketplaceID: mp.ID, Title: "P", DestinationURL: "https://example.com", ImageURL: &image, ShortenPolicyOverride: &direct, Active: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := c.GetLink(ctx, org, l.ID, false); got.EffectivePolicy() != domain.PolicyDirect || got.ImageURL == nil {
+		t.Fatalf("estado inicial: %+v", got)
+	}
+	empty, noImage := domain.Policy(""), ""
+	if _, err = c.UpdateLink(ctx, org, l.ID, nil, nil, &noImage, nil, &empty, nil); err != nil {
+		t.Fatal(err)
+	}
+	got, _ := c.GetLink(ctx, org, l.ID, false)
+	if got.ShortenPolicyOverride != nil || got.EffectivePolicy() != domain.PolicyShorten || got.ImageURL != nil {
+		t.Fatalf("política própria e imagem deveriam ter sido removidas: %+v", got)
+	}
+	// valores ausentes (nil) preservam; política inválida continua rejeitada
+	title := "Novo"
+	if _, err = c.UpdateLink(ctx, org, l.ID, &title, nil, nil, nil, nil, nil); err != nil {
+		t.Fatal(err)
+	}
+	bad := domain.Policy("outra")
+	var ve domain.ValidationError
+	if _, err = c.UpdateLink(ctx, org, l.ID, nil, nil, nil, nil, &bad, nil); !errors.As(err, &ve) {
+		t.Fatalf("política inválida deveria falhar: %v", err)
+	}
+}

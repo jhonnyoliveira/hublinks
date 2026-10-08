@@ -79,7 +79,7 @@ func (c *Catalog) ListLinksWithOptions(ctx context.Context, orgID uuid.UUID, o L
 	if err != nil {
 		return nil, 0, err
 	}
-	q, args := paged("SELECT l.id,l.org_id,l.marketplace_id,l.title,l.image_url,l.destination_url,l.shorten_policy_override,l.active,l.created_at,l.updated_at,l.deleted_at,l.purged_at,s.code,m.id,m.org_id,m.name,m.shorten_policy,m.created_at,m.updated_at,m.deleted_at,m.purged_at FROM affiliate_links l JOIN marketplaces m ON m.id=l.marketplace_id JOIN short_codes s ON s.target_id=l.id AND s.target_type='affiliate_link' WHERE "+where+""+" "+orderBy(o.Sort, map[string]string{"title": "lower(l.title)", "created": "l.created_at", "updated": "l.updated_at"}, "ORDER BY l.created_at DESC", "l.id"), args, o)
+	q, args := paged("SELECT "+linkColumns+linkFrom+where+" "+orderBy(o.Sort, map[string]string{"title": "lower(l.title)", "created": "l.created_at", "updated": "l.updated_at"}, "ORDER BY l.created_at DESC", "l.id"), args, o)
 	rows, err := c.Pool.Query(ctx, q, args...)
 	if err != nil {
 		return nil, 0, err
@@ -87,20 +87,33 @@ func (c *Catalog) ListLinksWithOptions(ctx context.Context, orgID uuid.UUID, o L
 	defer rows.Close()
 	items := []domain.AffiliateLink{}
 	for rows.Next() {
-		var l domain.AffiliateLink
-		var mp domain.Marketplace
-		var override *string
-		if err := rows.Scan(&l.ID, &l.OrgID, &l.MarketplaceID, &l.Title, &l.ImageURL, &l.DestinationURL, &override, &l.Active, &l.CreatedAt, &l.UpdatedAt, &l.DeletedAt, &l.PurgedAt, &l.Code, &mp.ID, &mp.OrgID, &mp.Name, &mp.ShortenPolicy, &mp.CreatedAt, &mp.UpdatedAt, &mp.DeletedAt, &mp.PurgedAt); err != nil {
+		l, err := scanLink(rows)
+		if err != nil {
 			return nil, 0, err
 		}
-		if override != nil {
-			v := domain.Policy(*override)
-			l.ShortenPolicyOverride = &v
-		}
-		l.Marketplace = mp
 		items = append(items, l)
 	}
 	return items, total, rows.Err()
+}
+
+// linkColumns e linkFrom são a projeção comum de listagem e detalhe de links
+// (link, código curto e marketplace).
+const linkColumns = "l.id,l.org_id,l.marketplace_id,l.title,l.image_url,l.destination_url,l.shorten_policy_override,l.active,l.created_at,l.updated_at,l.deleted_at,l.purged_at,s.code,m.id,m.org_id,m.name,m.shorten_policy,m.created_at,m.updated_at,m.deleted_at,m.purged_at"
+const linkFrom = " FROM affiliate_links l JOIN marketplaces m ON m.id=l.marketplace_id JOIN short_codes s ON s.target_id=l.id AND s.target_type='affiliate_link' WHERE "
+
+func scanLink(row pgx.Row) (domain.AffiliateLink, error) {
+	var l domain.AffiliateLink
+	var mp domain.Marketplace
+	var override *string
+	if err := row.Scan(&l.ID, &l.OrgID, &l.MarketplaceID, &l.Title, &l.ImageURL, &l.DestinationURL, &override, &l.Active, &l.CreatedAt, &l.UpdatedAt, &l.DeletedAt, &l.PurgedAt, &l.Code, &mp.ID, &mp.OrgID, &mp.Name, &mp.ShortenPolicy, &mp.CreatedAt, &mp.UpdatedAt, &mp.DeletedAt, &mp.PurgedAt); err != nil {
+		return l, err
+	}
+	if override != nil {
+		v := domain.Policy(*override)
+		l.ShortenPolicyOverride = &v
+	}
+	l.Marketplace = mp
+	return l, nil
 }
 
 func (c *Catalog) SoftDeleteLink(ctx context.Context, orgID, id uuid.UUID) error {
@@ -145,7 +158,7 @@ func (c *Catalog) RestoreLink(ctx context.Context, orgID, id uuid.UUID) error {
 // invalidate the public resolution cache after the transaction succeeds.
 func (c *Catalog) UpdateLink(ctx context.Context, orgID, id uuid.UUID, title, destinationURL, imageURL *string, marketplaceID *uuid.UUID, policy *domain.Policy, active *bool) (string, error) {
 	if title != nil && !domain.Text(*title, 1, 200) {
-		return "", domain.ValidationError{Fields: map[string]string{"title": "título inválido"}}
+		return "", domain.ValidationError{Fields: map[string]string{"title": "título deve ter de 1 a 200 caracteres"}}
 	}
 	if destinationURL != nil && !domain.URL(*destinationURL) {
 		return "", domain.ValidationError{Fields: map[string]string{"destination_url": "URL deve usar http ou https"}}
@@ -153,7 +166,8 @@ func (c *Catalog) UpdateLink(ctx context.Context, orgID, id uuid.UUID, title, de
 	if imageURL != nil && *imageURL != "" && !domain.URL(*imageURL) {
 		return "", domain.ValidationError{Fields: map[string]string{"image_url": "URL deve usar http ou https"}}
 	}
-	if policy != nil && !domain.PolicyValid(*policy) {
+	// policy vazia ("") remove a política própria e volta a valer a do marketplace.
+	if policy != nil && *policy != "" && !domain.PolicyValid(*policy) {
 		return "", domain.ValidationError{Fields: map[string]string{"shorten_policy_override": "política inválida"}}
 	}
 	if marketplaceID != nil {
@@ -166,18 +180,14 @@ func (c *Catalog) UpdateLink(ctx context.Context, orgID, id uuid.UUID, title, de
 			return "", domain.ErrNotFound
 		}
 	}
-	var image any = imageURL
-	if imageURL != nil && *imageURL == "" {
-		image = nil
-	}
 	var code string
 	err := c.Pool.QueryRow(ctx, `UPDATE affiliate_links l SET
 		title=COALESCE($3,l.title), destination_url=COALESCE($4,l.destination_url),
 		image_url=CASE WHEN $5::text IS NULL THEN l.image_url ELSE NULLIF($5::text,'') END,
-		marketplace_id=COALESCE($6,l.marketplace_id), shorten_policy_override=COALESCE($7,l.shorten_policy_override),
+		marketplace_id=COALESCE($6,l.marketplace_id), shorten_policy_override=CASE WHEN $7::text IS NULL THEN l.shorten_policy_override ELSE NULLIF($7::text,'') END,
 		active=COALESCE($8,l.active), updated_at=$9
 		FROM short_codes s WHERE l.id=$1 AND l.org_id=$2 AND l.deleted_at IS NULL AND l.purged_at IS NULL
-		AND s.target_id=l.id AND s.target_type='affiliate_link' RETURNING s.code`, id, orgID, title, destinationURL, image, marketplaceID, policy, active, time.Now().UTC()).Scan(&code)
+		AND s.target_id=l.id AND s.target_type='affiliate_link' RETURNING s.code`, id, orgID, title, destinationURL, imageURL, marketplaceID, policy, active, time.Now().UTC()).Scan(&code)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return "", domain.ErrNotFound
 	}
@@ -185,14 +195,13 @@ func (c *Catalog) UpdateLink(ctx context.Context, orgID, id uuid.UUID, title, de
 }
 
 func (c *Catalog) GetLink(ctx context.Context, orgID, id uuid.UUID, trash bool) (domain.AffiliateLink, error) {
-	items, _, err := c.ListLinksWithOptions(ctx, orgID, ListOptions{Trash: trash})
-	if err != nil {
-		return domain.AffiliateLink{}, err
+	where := "l.id=$1 AND l.org_id=$2 AND l.purged_at IS NULL AND l.deleted_at IS NULL"
+	if trash {
+		where = "l.id=$1 AND l.org_id=$2 AND l.purged_at IS NULL AND l.deleted_at IS NOT NULL"
 	}
-	for _, item := range items {
-		if item.ID == id {
-			return item, nil
-		}
+	l, err := scanLink(c.Pool.QueryRow(ctx, "SELECT "+linkColumns+linkFrom+where, id, orgID))
+	if errors.Is(err, pgx.ErrNoRows) {
+		return domain.AffiliateLink{}, domain.ErrNotFound
 	}
-	return domain.AffiliateLink{}, domain.ErrNotFound
+	return l, err
 }

@@ -1,0 +1,15 @@
+{{define "marketplace_form"}}
+<h2 id="modal-title">{{if .ID}}Editar marketplace{{else}}Novo marketplace{{end}}</h2>
+<form hx-post="{{if .ID}}/admin/marketplaces/{{.ID}}{{else}}/admin/marketplaces{{end}}" hx-target="#modal-body" hx-swap="innerHTML" hx-disabled-elt="find button[type=submit]">
+  <input type="hidden" name="csrf_token" value="{{.CSRF}}">
+  {{if .Error}}<p class="alert alert-danger" role="alert">{{.Error}}</p>{{end}}
+  {{template "field" (dict "ID" "mp-name" "Name" "name" "Label" "Nome" "Value" .Name "Required" true "MaxLength" 80 "Error" (index .Errors "name") "Autofocus" true)}}
+  <div class="field"><label for="mp-policy">Política padrão dos links</label>
+    <select id="mp-policy" name="shorten_policy"{{if index .Errors "shorten_policy"}} aria-invalid="true" aria-describedby="mp-policy-error"{{end}}>
+      <option value="shorten"{{if ne .Policy "direct"}} selected{{end}}>Encurtar e rastrear cliques</option>
+      <option value="direct"{{if eq .Policy "direct"}} selected{{end}}>Direto (não rastreável)</option>
+    </select>
+    {{if index .Errors "shorten_policy"}}<p id="mp-policy-error" class="field-error" role="alert">{{index .Errors "shorten_policy"}}</p>{{end}}
+    <p class="hint">Links “diretos” exibem a URL original e não contam cliques.</p></div>
+  <div class="modal-actions"><button type="button" class="btn" data-modal-close>Cancelar</button><button type="submit" class="btn btn-primary">Salvar</button></div>
+</form>{{end}}

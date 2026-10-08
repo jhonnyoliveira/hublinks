@@ -1,0 +1,25 @@
+{{define "head"}}<title>{{if .ID}}Editar link{{else}}Novo link{{end}} | Hub Links</title>{{end}}
+{{define "content"}}
+<div class="page-head"><h1>{{if .ID}}Editar link{{else}}Novo link{{end}}</h1><a class="btn" href="{{if .ID}}/admin/links/{{.ID}}{{else}}/admin/links{{end}}">Cancelar</a></div>
+<form class="card" style="padding:1rem" method="post" action="{{if .ID}}/admin/links/{{.ID}}{{else}}/admin/links{{end}}" data-unsaved="false" novalidate>
+  <input type="hidden" name="csrf_token" value="{{.CSRF}}">
+  {{if .Error}}<p class="alert alert-danger" role="alert">{{.Error}}</p>{{end}}
+  {{template "field" (dict "ID" "title" "Name" "title" "Label" "Título" "Value" .Title "Required" true "MaxLength" 200 "Error" (index .Errors "title") "Autofocus" true)}}
+  {{template "field" (dict "ID" "destination_url" "Name" "destination_url" "Label" "URL de destino" "Type" "url" "Value" .DestinationURL "Required" true "MaxLength" 2048 "Error" (index .Errors "destination_url") "Hint" "Somente http ou https. É para onde a pessoa será levada.")}}
+  {{template "field" (dict "ID" "image_url" "Name" "image_url" "Label" "URL da imagem (opcional)" "Type" "url" "Value" .ImageURL "MaxLength" 2048 "Error" (index .Errors "image_url") "Hint" "Usada na prévia de compartilhamento.")}}
+  <div class="field"><label for="marketplace_id">Marketplace <span aria-hidden="true">*</span></label>
+    <select id="marketplace_id" name="marketplace_id" required{{if index .Errors "marketplace_id"}} aria-invalid="true" aria-describedby="marketplace_id-error"{{end}}>
+      <option value="">Selecione…</option>{{range .Marketplaces}}<option value="{{.ID}}"{{if eq (printf "%s" .ID) $.MarketplaceID}} selected{{end}}>{{.Name}}</option>{{end}}
+    </select>{{if index .Errors "marketplace_id"}}<p id="marketplace_id-error" class="field-error" role="alert">{{index .Errors "marketplace_id"}}</p>{{end}}</div>
+  <div class="field"><label for="shorten_policy_override">Política deste link</label>
+    <select id="shorten_policy_override" name="shorten_policy_override"{{if index .Errors "shorten_policy_override"}} aria-invalid="true" aria-describedby="policy-error"{{end}}>
+      <option value=""{{if eq .Policy ""}} selected{{end}}>Usar a política do marketplace</option>
+      <option value="shorten"{{if eq .Policy "shorten"}} selected{{end}}>Encurtar e rastrear cliques</option>
+      <option value="direct"{{if eq .Policy "direct"}} selected{{end}}>Direto (não rastreável)</option>
+    </select>{{if index .Errors "shorten_policy_override"}}<p id="policy-error" class="field-error" role="alert">{{index .Errors "shorten_policy_override"}}</p>{{end}}</div>
+  <label class="switch-label"><input type="checkbox" role="switch" name="active" value="true"{{if .Active}} checked{{end}}> Ativo</label>
+  <p class="hint">Um link inativo responde “não encontrado”.</p>
+  <div><button type="submit" class="btn btn-primary">Salvar</button></div>
+</form>
+<script src="/static/js/unsaved.js" defer></script>
+{{end}}

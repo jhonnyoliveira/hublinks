@@ -1,0 +1,8 @@
+{{define "channel_confirm_delete"}}
+<h2 id="modal-title">Excluir canal</h2>
+<form hx-post="/admin/channels/{{.ID}}/delete" hx-target="#modal-body" hx-swap="innerHTML" hx-disabled-elt="find button[type=submit]">
+  <input type="hidden" name="csrf_token" value="{{.CSRF}}">
+  <p>Enviar o canal “{{.Name}}” (<code>/{{.Segment}}</code>) para a lixeira? Você poderá restaurá-lo por {{.RetentionDays}} dias, e o segmento continua reservado até lá.</p>
+  {{if .ActiveLinks}}<p class="alert" role="alert">{{.ActiveLinks}} {{if eq .ActiveLinks 1}}link terá{{else}}links terão{{end}} a URL deste canal invalidada.</p>{{end}}
+  <div class="modal-actions"><button type="button" class="btn" data-modal-close>Cancelar</button><button type="submit" class="btn btn-danger">Enviar para a lixeira</button></div>
+</form>{{end}}

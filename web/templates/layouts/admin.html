@@ -1,5 +1,14 @@
 {{define "admin"}}<!doctype html>
 <html lang="pt-BR">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="/static/css/app.dev.css">{{template "head" .}}</head>
-<body><header><a href="/admin">Hub Links</a>{{if .CSRF}}<nav><a href="/admin/marketplaces">Marketplaces</a> <a href="/admin/channels">Canais</a> <a href="/admin/links">Links</a> <a href="/admin/lixeira">Lixeira</a></nav><form action="/admin/logout" method="post"><input type="hidden" name="csrf_token" value="{{.CSRF}}"><button>Sair</button></form>{{end}}</header><main>{{template "content" .}}</main></body>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">{{if .CSRF}}<meta name="csrf-token" content="{{.CSRF}}">{{end}}
+<meta name="htmx-config" content='{"responseHandling":[{"code":"204","swap":false},{"code":"[23]..","swap":true},{"code":"409","swap":true},{"code":"422","swap":true},{"code":"[45]..","swap":false,"error":true}]}'>
+<link rel="stylesheet" href="/static/css/app.dev.css">
+<script src="/static/vendor/htmx.min.js" defer></script><script src="/static/js/panel.js" defer></script><script src="/static/vendor/alpine.min.js" defer></script>{{template "head" .}}</head>
+<body>
+<a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
+<header class="topbar"><a class="brand" href="/admin">Hub Links</a>{{if .CSRF}}<nav aria-label="Principal"><a href="/admin/marketplaces">Marketplaces</a> <a href="/admin/channels">Canais</a> <a href="/admin/links">Links</a> <a href="/admin/lixeira">Lixeira</a></nav><form action="/admin/logout" method="post"><input type="hidden" name="csrf_token" value="{{.CSRF}}"><button class="btn btn-ghost">Sair</button></form>{{end}}</header>
+<div class="toasts" x-data="toasts" @toast.window="add($event.detail)" aria-live="polite" role="status"><template x-for="t in items" :key="t.id"><p class="toast" :class="'toast-' + t.kind" x-text="t.message"></p></template></div>
+<main id="conteudo">{{template "content" .}}</main>
+<dialog id="modal" class="modal" aria-labelledby="modal-title"><div id="modal-body"></div></dialog>
+</body>
 </html>{{end}}

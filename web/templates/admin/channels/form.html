@@ -1,0 +1,10 @@
+{{define "channel_form"}}
+<h2 id="modal-title">{{if .ID}}Editar canal{{else}}Novo canal{{end}}</h2>
+<form hx-post="{{if .ID}}/admin/channels/{{.ID}}{{else}}/admin/channels{{end}}" hx-target="#modal-body" hx-swap="innerHTML" hx-disabled-elt="find button[type=submit]">
+  <input type="hidden" name="csrf_token" value="{{.CSRF}}">
+  {{if .Error}}<p class="alert alert-danger" role="alert">{{.Error}}</p>{{end}}
+  {{template "field" (dict "ID" "ch-name" "Name" "name" "Label" "Nome" "Value" .Name "Required" true "MaxLength" 60 "Error" (index .Errors "name") "Autofocus" true)}}
+  {{template "field" (dict "ID" "ch-segment" "Name" "segment" "Label" "Segmento da URL" "Value" .Segment "Required" true "MaxLength" 20 "Pattern" "[a-z0-9][a-z0-9\\-]{0,19}" "Error" (index .Errors "segment") "Hint" "Minúsculas, números e hífen (até 20). Exemplo: wapp gera /wapp/código.")}}
+  {{if .ID}}<p class="alert">Alterar o segmento invalida as URLs deste canal que já foram divulgadas.</p>{{end}}
+  <div class="modal-actions"><button type="button" class="btn" data-modal-close>Cancelar</button><button type="submit" class="btn btn-primary">Salvar</button></div>
+</form>{{end}}
