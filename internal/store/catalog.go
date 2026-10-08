@@ -11,7 +11,10 @@ import (
 	"time"
 )
 
-type Catalog struct{ Pool *pgxpool.Pool }
+type Catalog struct {
+	Pool    *pgxpool.Pool
+	newCode func() (string, error)
+}
 
 // ListOptions define filtros comuns às listagens administrativas. Page starts at
 // one; callers that do not need pagination may leave it zero.
@@ -23,7 +26,13 @@ type ListOptions struct {
 	Page, PerPage int
 }
 
-func NewCatalog(p *pgxpool.Pool) *Catalog { return &Catalog{p} }
+func NewCatalog(p *pgxpool.Pool) *Catalog { return &Catalog{Pool: p, newCode: domain.NewCode} }
+
+// NewCatalogWithCodeGenerator is used by integration tests to make a database
+// collision deterministic. Application code must use NewCatalog.
+func NewCatalogWithCodeGenerator(p *pgxpool.Pool, generator func() (string, error)) *Catalog {
+	return &Catalog{Pool: p, newCode: generator}
+}
 func (c *Catalog) Resolve(ctx context.Context, code string) (domain.AffiliateLink, error) {
 	const q = `SELECT l.id,l.org_id,l.marketplace_id,l.title,l.image_url,l.destination_url,l.shorten_policy_override,l.active,l.created_at,l.updated_at,l.deleted_at,l.purged_at,m.id,m.org_id,m.name,m.shorten_policy,m.created_at,m.updated_at,m.deleted_at,m.purged_at FROM short_codes s JOIN affiliate_links l ON l.id=s.target_id JOIN marketplaces m ON m.id=l.marketplace_id WHERE s.code=$1`
 	var l domain.AffiliateLink
@@ -99,7 +108,7 @@ func (c *Catalog) CreateLink(ctx context.Context, l domain.AffiliateLink) (domai
 		return l, err
 	}
 	for n := 0; n < 5; n++ {
-		l.Code, err = domain.NewCode()
+		l.Code, err = c.newCode()
 		if err != nil {
 			return l, err
 		}

@@ -30,6 +30,13 @@ func TestCatalogScopesAndEffectivePolicy(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if _, err = c.CreateMarketplace(context.Background(), orgA, "loja", domain.PolicyShorten); err == nil {
+		t.Fatal("nome de marketplace duplicado aceito")
+	}
+	channel, err := c.CreateChannel(context.Background(), orgA, "WhatsApp", "wapp")
+	if err != nil {
+		t.Fatal(err)
+	}
 	link, err := c.CreateLink(context.Background(), domain.AffiliateLink{OrgID: orgA, MarketplaceID: mp.ID, Title: "Produto", DestinationURL: "https://example.com/produto", Active: true})
 	if err != nil {
 		t.Fatal(err)
@@ -49,6 +56,38 @@ func TestCatalogScopesAndEffectivePolicy(t *testing.T) {
 	}
 	if err = c.SoftDeleteLink(context.Background(), orgB, link.ID); !errors.Is(err, domain.ErrNotFound) {
 		t.Fatalf("outra org excluiu link: %v", err)
+	}
+	if err = c.UpdateChannel(context.Background(), orgB, channel.ID, nil, nil); !errors.Is(err, domain.ErrNotFound) {
+		t.Fatalf("outra org alterou canal: %v", err)
+	}
+}
+
+func TestCatalogRetriesShortCodeCollision(t *testing.T) {
+	p := testdb.New(t)
+	first := store.NewCatalog(p)
+	org := catalogOrg(t, first)
+	mp, err := first.CreateMarketplace(context.Background(), org, "Loja", domain.PolicyShorten)
+	if err != nil {
+		t.Fatal(err)
+	}
+	existing, err := first.CreateLink(context.Background(), domain.AffiliateLink{OrgID: org, MarketplaceID: mp.ID, Title: "Primeiro", DestinationURL: "https://example.com/1", Active: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	calls := 0
+	c := store.NewCatalogWithCodeGenerator(p, func() (string, error) {
+		calls++
+		if calls == 1 {
+			return existing.Code, nil
+		}
+		return "zzzzzzz", nil
+	})
+	second, err := c.CreateLink(context.Background(), domain.AffiliateLink{OrgID: org, MarketplaceID: mp.ID, Title: "Segundo", DestinationURL: "https://example.com/2", Active: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if second.Code != "zzzzzzz" || calls != 2 {
+		t.Fatalf("colisão não foi repetida: código=%q chamadas=%d", second.Code, calls)
 	}
 }
 
@@ -102,5 +141,11 @@ func TestCatalogTrashAndUniqueChannel(t *testing.T) {
 	}
 	if err = c.RestoreLink(context.Background(), org, link.ID); err != nil {
 		t.Fatal(err)
+	}
+	if _, err = p.Exec(context.Background(), "UPDATE affiliate_links SET deleted_at=$2,purged_at=$2 WHERE id=$1", link.ID, time.Now().UTC()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.RestoreLink(context.Background(), org, link.ID); !errors.Is(err, domain.ErrNotFound) {
+		t.Fatalf("item purgado foi restaurado: %v", err)
 	}
 }

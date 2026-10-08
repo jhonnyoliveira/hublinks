@@ -210,7 +210,7 @@ acessá-la. Deve redirecionar `302` ao destino; código ou canal inexistente →
   - política ∈ {`shorten`,`direct`}.
 - [X] T034 [P] [US1] Testes unitários em `internal/domain/code_test.go`: o código gerado casa
   `^[0-9a-z]{7}$`, nunca é `healthz`, e há distribuição sobre os 36 símbolos.
-- [ ] T035 [P] [US1] Testes de integração em `internal/store/catalog_test.go`:
+- [X] T035 [P] [US1] Testes de integração em `internal/store/catalog_test.go`:
   - CRUD dos três repositórios sempre filtrado por `org_id` (ID de outra org → `ErrNotFound`);
   - unicidade de `(org_id, segment) WHERE purged_at IS NULL`;
   - nome de marketplace único por org entre não excluídos definitivamente;

@@ -64,7 +64,7 @@ func (c Catalog) Links(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost {
 		marketplaceID, err := uuid.Parse(r.FormValue("marketplace_id"))
 		if err == nil {
-			_, err = c.Service.CreateLink(r.Context(), domain.AffiliateLink{OrgID: s.OrgID, MarketplaceID: marketplaceID, Title: r.FormValue("title"), DestinationURL: r.FormValue("destination_url"), Active: true})
+			_, err = c.Service.CreateLink(r.Context(), domain.AffiliateLink{OrgID: s.OrgID, MarketplaceID: marketplaceID, Title: r.FormValue("title"), DestinationURL: r.FormValue("destination_url"), Active: r.FormValue("active") != ""})
 		}
 		if err == nil {
 			http.Redirect(w, r, "/admin/links", http.StatusSeeOther)
@@ -72,7 +72,7 @@ func (c Catalog) Links(w http.ResponseWriter, r *http.Request) {
 		}
 		errText = "Não foi possível criar o link: " + err.Error()
 	}
-	items, err := c.Service.Store.ListLinks(r.Context(), s.OrgID)
+	items, _, err := c.Service.Links(r.Context(), s.OrgID, store.ListOptions{})
 	if err != nil {
 		http.Error(w, "erro interno", 500)
 		return
@@ -85,7 +85,7 @@ func (c Catalog) Links(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	_ = webtmpl.Render(w, "admin", "admin/links", struct {
 		CSRF, Error  string
-		Items        []domain.AffiliateLink
+		Items        []service.LinkView
 		Marketplaces []domain.Marketplace
 	}{s.CSRF, errText, items, marketplaces})
 }

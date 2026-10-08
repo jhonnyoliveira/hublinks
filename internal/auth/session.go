@@ -60,6 +60,13 @@ func FromContext(ctx context.Context) (Session, bool) {
 	s, ok := ctx.Value(sessionKey).(Session)
 	return s, ok
 }
+
+// WithSession attaches an already authenticated session to a request. It is
+// useful for composing protected handlers in tests; production requests use
+// Manager.Require.
+func WithSession(r *http.Request, s Session) *http.Request {
+	return r.WithContext(context.WithValue(r.Context(), sessionKey, s))
+}
 func (m Manager) Require(next http.Handler, api bool) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		c, e := r.Cookie(CookieName)
