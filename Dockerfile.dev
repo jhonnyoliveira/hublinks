@@ -37,6 +37,31 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   lsof \
   && rm -rf /var/lib/apt/lists/*
 
+# Bibliotecas de sistema do Chromium headless, para testar o painel num navegador
+# real (por exemplo, com Playwright). O navegador em si é baixado pelo Playwright
+# para o $HOME do usuário (`npx playwright install chromium`). Não usamos
+# `playwright install-deps`, que referencia pacotes de fonte inexistentes nesta
+# base Debian; os nomes abaixo (sufixo t64) são os desta imagem.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+  fonts-liberation \
+  fonts-unifont \
+  libasound2t64 \
+  libatk-bridge2.0-0t64 \
+  libatk1.0-0t64 \
+  libcairo2 \
+  libcups2t64 \
+  libdrm2 \
+  libgbm1 \
+  libnspr4 \
+  libnss3 \
+  libpango-1.0-0 \
+  libxcomposite1 \
+  libxdamage1 \
+  libxfixes3 \
+  libxkbcommon0 \
+  libxrandr2 \
+  && rm -rf /var/lib/apt/lists/*
+
 # uv/uvx para instalar e executar ferramentas Python, incluindo o Specify CLI
 # do Spec Kit. Python, Git e certificados já estão nos pacotes base acima.
 COPY --from=uv /uv /uvx /usr/local/bin/
