@@ -261,12 +261,24 @@ func paged(q string, args []any, o ListOptions) (string, []any) {
 }
 
 func (c *Catalog) SoftDeleteMarketplace(ctx context.Context, orgID, id uuid.UUID) error {
-	var links int
-	if err := c.Pool.QueryRow(ctx, "SELECT count(*) FROM affiliate_links WHERE org_id=$1 AND marketplace_id=$2 AND deleted_at IS NULL AND purged_at IS NULL", orgID, id).Scan(&links); err != nil {
+	rows, err := c.Pool.Query(ctx, "SELECT id,title FROM affiliate_links WHERE org_id=$1 AND marketplace_id=$2 AND deleted_at IS NULL AND purged_at IS NULL ORDER BY created_at", orgID, id)
+	if err != nil {
 		return err
 	}
-	if links > 0 {
-		return domain.ErrConflict
+	defer rows.Close()
+	links := []domain.LinkRef{}
+	for rows.Next() {
+		var link domain.LinkRef
+		if err := rows.Scan(&link.ID, &link.Title); err != nil {
+			return err
+		}
+		links = append(links, link)
+	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	if len(links) > 0 {
+		return domain.MarketplaceInUseError{Links: links}
 	}
 	tag, err := c.Pool.Exec(ctx, "UPDATE marketplaces SET deleted_at=$3,updated_at=$3 WHERE id=$1 AND org_id=$2 AND deleted_at IS NULL AND purged_at IS NULL", id, orgID, time.Now().UTC())
 	if err != nil {

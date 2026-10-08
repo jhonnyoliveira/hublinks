@@ -304,6 +304,11 @@ func catalogError(w http.ResponseWriter, e error) {
 		errorJSON(w, 404, "not_found", e.Error())
 		return
 	}
+	var inUse domain.MarketplaceInUseError
+	if errors.As(e, &inUse) {
+		jsonOut(w, 409, map[string]any{"error": map[string]any{"code": "conflict", "message": e.Error()}, "links": inUse.Links})
+		return
+	}
 	errorJSON(w, 409, "conflict", e.Error())
 }
 
