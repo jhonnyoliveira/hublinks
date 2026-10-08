@@ -11,7 +11,9 @@
 
 O repositório já contém a aplicação Go, a fundação de configuração, banco, migrações, saúde, autenticação, renderização por `html/template`, catálogo e redirecionamento. O `package.json` continua genérico e não define a stack de testes.
 
-A fundação (T001–T032) foi auditada contra a descrição de cada tarefa e a **User Story 1** (T033–T052) está implementada e testada: configuração sem vazamento de segredos, sessões com expiração por inatividade, login, API `/api/v1`, serviço, repositórios, redirecionamento 302 com cache, painel (marketplaces, canais, links, lixeira), componentes e tema claro/escuro, e o roteamento. Falta o **checkpoint da US1**: conferir os cenários 1–5 da spec e o passo 3 do `quickstart.md`. Não avance para a User Story 2 antes dele.
+A fundação (T001–T032) foi auditada contra a descrição de cada tarefa e a **User Story 1** (T033–T052) está implementada, testada e **aceita no checkpoint**: os cenários 1–5 da spec e os passos 1, 3, 6, 9 e 10 do `quickstart.md` foram exercitados contra o servidor real (curl e Chromium headless). Ficaram de fora, por dependerem de outras histórias, o deploy por compose (US7), a contagem de cliques e a resiliência do worker (US2), a prévia de crawler (US3) e a agregação/limpeza (US6).
+
+O próximo trabalho é a **User Story 2 — Ver cliques totais e únicos** (T053 em diante). Siga a ordem do `tasks.md`; o ponto de extensão `redirect.Recorder` e o `EventRecorder` já existem, mas a gravação em lote, as flags de unicidade e as estatísticas ainda precisam ser verificadas contra a descrição de cada tarefa antes de serem marcadas.
 
 Pontos de atenção:
 
