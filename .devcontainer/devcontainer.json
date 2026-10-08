@@ -5,11 +5,13 @@
   "workspaceFolder": "/workspaces/app",
   "shutdownAction": "stopCompose",
   "remoteUser": "vscode",
+  "initializeCommand": ["mkdir", "-p", "${localEnv:HOME}/.codex", "${localEnv:HOME}/.claude"],
   "mounts": [
     "source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,type=bind,consistency=cached",
-    "source=${localEnv:HOME}/.claude,target=/home/vscode/.claude,type=bind"
+    "source=${localEnv:HOME}/.codex,target=/home/vscode/.codex,type=bind,readonly=false",
+    "source=${localEnv:HOME}/.claude,target=/home/vscode/.claude,type=bind,readonly=false"
   ],
-  "postCreateCommand": "corepack enable && pnpm install",
+  "postCreateCommand": "sudo chown vscode:vscode \"$CODEX_HOME\" \"$CLAUDE_CONFIG_DIR\" || true; corepack enable && pnpm install",
   "customizations": {
     "vscode": {
       "extensions": [
@@ -31,6 +33,7 @@
   },
 
   "containerEnv": {
+    "CODEX_HOME": "/home/vscode/.codex",
     "CLAUDE_CONFIG_DIR": "/home/vscode/.claude",
     "DATABASE_URL": "postgresql://hublinks:hublinks@postgres:5432/hublinks",
     "REDIS_URL": "redis://redis:6379"

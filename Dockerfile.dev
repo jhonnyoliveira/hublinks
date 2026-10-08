@@ -1,3 +1,6 @@
+ARG UV_VERSION=0.12.23
+FROM ghcr.io/astral-sh/uv:${UV_VERSION} AS uv
+
 FROM golang:1.27
 
 ARG NODE_MAJOR=22
@@ -33,6 +36,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   bubblewrap \
   lsof \
   && rm -rf /var/lib/apt/lists/*
+
+# uv/uvx para instalar e executar ferramentas Python, incluindo o Specify CLI
+# do Spec Kit. Python, Git e certificados já estão nos pacotes base acima.
+COPY --from=uv /uv /uvx /usr/local/bin/
 
 # Node.js (repositório oficial NodeSource) + habilita yarn/pnpm via corepack
 RUN mkdir -p /etc/apt/keyrings \
@@ -80,6 +87,12 @@ RUN mkdir -p /workspaces/app && chown -R ${USERNAME}:${USERNAME} /workspaces/app
 # A partir daqui tudo roda como não-root
 USER ${USERNAME}
 ENV PATH="/home/${USERNAME}/.local/bin:${PATH}"
+
+# Spec Kit exige Python 3.11+; ferramentas instaladas com `uv tool install`
+# usam ~/.local/bin, já disponível no PATH do usuário final.
+RUN python3 -c 'import sys; assert sys.version_info >= (3, 11), "Spec Kit exige Python 3.11+"' \
+  && uv --version \
+  && uvx --version
 
 # rtk compresses command outputs before they reach the context window.
 # Instalado como o usuário final, para ir para o $HOME dele e não para /root.
