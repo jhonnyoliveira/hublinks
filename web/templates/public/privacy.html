@@ -1,0 +1,2 @@
+{{define "head"}}<title>Privacidade | Hub Links</title>{{end}}
+{{define "content"}}<main><h1>Privacidade</h1><p>Usamos um identificador anônimo derivado de IP e user-agent, protegido por hash, sem cookies de rastreamento. A finalidade é produzir estatísticas de divulgação.</p><p>Eventos reais são retidos por {{.EventsRetentionDays}} dias; eventos de robôs por {{.BotEventsRetentionDays}} dias; itens na lixeira por {{.TrashRetentionDays}} dias.</p><p>Para solicitar exclusão, escreva para <a href="mailto:{{.PrivacyContact}}">{{.PrivacyContact}}</a>.</p></main>{{end}}

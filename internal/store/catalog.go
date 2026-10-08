@@ -95,3 +95,60 @@ func (c *Catalog) CreateLink(ctx context.Context, l domain.AffiliateLink) (domai
 	}
 	return l, tx.Commit(ctx)
 }
+
+func (c *Catalog) ListMarketplaces(ctx context.Context, orgID uuid.UUID) ([]domain.Marketplace, error) {
+	rows, err := c.Pool.Query(ctx, `SELECT id,org_id,name,shorten_policy,created_at,updated_at,deleted_at,purged_at FROM marketplaces WHERE org_id=$1 AND deleted_at IS NULL AND purged_at IS NULL ORDER BY lower(name)`, orgID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []domain.Marketplace{}
+	for rows.Next() {
+		var m domain.Marketplace
+		if err := rows.Scan(&m.ID, &m.OrgID, &m.Name, &m.ShortenPolicy, &m.CreatedAt, &m.UpdatedAt, &m.DeletedAt, &m.PurgedAt); err != nil {
+			return nil, err
+		}
+		items = append(items, m)
+	}
+	return items, rows.Err()
+}
+func (c *Catalog) ListChannels(ctx context.Context, orgID uuid.UUID) ([]domain.Channel, error) {
+	rows, err := c.Pool.Query(ctx, `SELECT id,org_id,name,segment,created_at,updated_at,deleted_at,purged_at FROM channels WHERE org_id=$1 AND deleted_at IS NULL AND purged_at IS NULL ORDER BY lower(name)`, orgID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []domain.Channel{}
+	for rows.Next() {
+		var v domain.Channel
+		if err := rows.Scan(&v.ID, &v.OrgID, &v.Name, &v.Segment, &v.CreatedAt, &v.UpdatedAt, &v.DeletedAt, &v.PurgedAt); err != nil {
+			return nil, err
+		}
+		items = append(items, v)
+	}
+	return items, rows.Err()
+}
+
+func (c *Catalog) ListLinks(ctx context.Context, orgID uuid.UUID) ([]domain.AffiliateLink, error) {
+	rows, err := c.Pool.Query(ctx, `SELECT l.id,l.org_id,l.marketplace_id,l.title,l.image_url,l.destination_url,l.shorten_policy_override,l.active,l.created_at,l.updated_at,l.deleted_at,l.purged_at,s.code,m.id,m.org_id,m.name,m.shorten_policy,m.created_at,m.updated_at,m.deleted_at,m.purged_at FROM affiliate_links l JOIN marketplaces m ON m.id=l.marketplace_id JOIN short_codes s ON s.target_id=l.id AND s.target_type='affiliate_link' WHERE l.org_id=$1 AND l.deleted_at IS NULL AND l.purged_at IS NULL ORDER BY l.created_at DESC`, orgID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []domain.AffiliateLink{}
+	for rows.Next() {
+		var l domain.AffiliateLink
+		var mp domain.Marketplace
+		var override *string
+		if err := rows.Scan(&l.ID, &l.OrgID, &l.MarketplaceID, &l.Title, &l.ImageURL, &l.DestinationURL, &override, &l.Active, &l.CreatedAt, &l.UpdatedAt, &l.DeletedAt, &l.PurgedAt, &l.Code, &mp.ID, &mp.OrgID, &mp.Name, &mp.ShortenPolicy, &mp.CreatedAt, &mp.UpdatedAt, &mp.DeletedAt, &mp.PurgedAt); err != nil {
+			return nil, err
+		}
+		if override != nil {
+			v := domain.Policy(*override)
+			l.ShortenPolicyOverride = &v
+		}
+		l.Marketplace = mp
+		items = append(items, l)
+	}
+	return items, rows.Err()
+}

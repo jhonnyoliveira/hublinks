@@ -1,12 +1,11 @@
 package admin
 
 import (
-	"fmt"
 	"github.com/google/uuid"
 	"github.com/hublinks/hublinks/internal/auth"
+	webtmpl "github.com/hublinks/hublinks/web"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"html"
 	"net/http"
 	"strings"
 )
@@ -18,7 +17,7 @@ type Login struct {
 
 func (l Login) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
-		l.form(w, "")
+		l.form(w, r.URL.Query().Get("next"), "")
 		return
 	}
 	if r.Method != http.MethodPost {
@@ -30,7 +29,7 @@ func (l Login) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var hash string
 	err := l.Pool.QueryRow(r.Context(), `SELECT u.id,u.password_hash,m.org_id FROM users u JOIN memberships m ON m.user_id=u.id WHERE u.email=$1 AND u.deleted_at IS NULL LIMIT 1`, email).Scan(&id, &hash, &org)
 	if err != nil || !auth.Verify(r.FormValue("password"), hash) {
-		l.form(w, "E-mail ou senha inválidos")
+		l.form(w, r.FormValue("next"), "E-mail ou senha inválidos")
 		return
 	}
 	raw, s, err := l.Sessions.Create(r.Context(), id, org)
@@ -45,9 +44,11 @@ func (l Login) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	http.Redirect(w, r, next, http.StatusSeeOther)
 }
-func (l Login) form(w http.ResponseWriter, msg string) {
+func (l Login) form(w http.ResponseWriter, next, msg string) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	_, _ = fmt.Fprintf(w, `<!doctype html><html lang="pt-BR"><body><h1>Entrar</h1><p>%s</p><form method="post"><label>E-mail <input name="email" type="email" required></label><label>Senha <input name="password" type="password" required></label><button>Entrar</button></form></body></html>`, html.EscapeString(msg))
+	if err := webtmpl.Render(w, "admin", "admin/login", struct{ Next, Error string }{next, msg}); err != nil {
+		http.Error(w, "erro ao renderizar página", http.StatusInternalServerError)
+	}
 }
 func Logout(m auth.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -61,7 +62,9 @@ func Logout(m auth.Manager) http.HandlerFunc {
 func Dashboard(w http.ResponseWriter, r *http.Request) {
 	s, _ := auth.FromContext(r.Context())
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	_, _ = fmt.Fprintf(w, `<!doctype html><html lang="pt-BR"><body><nav><form action="/admin/logout" method="post"><input type="hidden" name="csrf_token" value="%s"><button>Sair</button></form></nav><h1>Painel</h1><p>Cadastre marketplaces, canais e links pela API administrativa. As estatísticas são atualizadas de forma assíncrona.</p></body></html>`, html.EscapeString(s.CSRF))
+	if err := webtmpl.Render(w, "admin", "admin/dashboard", struct{ CSRF string }{s.CSRF}); err != nil {
+		http.Error(w, "erro ao renderizar página", http.StatusInternalServerError)
+	}
 }
 
 var _ = pgx.ErrNoRows

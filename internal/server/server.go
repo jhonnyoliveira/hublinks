@@ -8,6 +8,7 @@ import (
 	"github.com/hublinks/hublinks/internal/config"
 	"github.com/hublinks/hublinks/internal/events"
 	"github.com/hublinks/hublinks/internal/httpx"
+	"github.com/hublinks/hublinks/internal/maintenance"
 	"github.com/hublinks/hublinks/internal/redirect"
 	"github.com/hublinks/hublinks/internal/stats"
 	"github.com/hublinks/hublinks/internal/store"
@@ -27,6 +28,13 @@ func New(pool *pgxpool.Pool, c config.Config) http.Handler {
 	mux.Handle("POST /admin/login", admin.Login{Pool: pool, Sessions: sessions})
 	mux.Handle("POST /admin/logout", sessions.Require(auth.RequireCSRF(admin.Logout(sessions)), false))
 	mux.Handle("GET /admin", sessions.Require(http.HandlerFunc(admin.Dashboard), false))
+	adminCatalog := admin.Catalog{Store: store.NewCatalog(pool)}
+	mux.Handle("GET /admin/marketplaces", sessions.Require(http.HandlerFunc(adminCatalog.Marketplaces), false))
+	mux.Handle("POST /admin/marketplaces", sessions.Require(auth.RequireCSRF(http.HandlerFunc(adminCatalog.Marketplaces)), false))
+	mux.Handle("GET /admin/channels", sessions.Require(http.HandlerFunc(adminCatalog.Channels), false))
+	mux.Handle("POST /admin/channels", sessions.Require(auth.RequireCSRF(http.HandlerFunc(adminCatalog.Channels)), false))
+	mux.Handle("GET /admin/links", sessions.Require(http.HandlerFunc(adminCatalog.Links), false))
+	mux.Handle("POST /admin/links", sessions.Require(auth.RequireCSRF(http.HandlerFunc(adminCatalog.Links)), false))
 	catalogAPI := api.Catalog{Store: store.NewCatalog(pool)}
 	mux.Handle("POST /api/v1/marketplaces", sessions.Require(auth.RequireCSRF(http.HandlerFunc(catalogAPI.Marketplace)), true))
 	mux.Handle("POST /api/v1/channels", sessions.Require(auth.RequireCSRF(http.HandlerFunc(catalogAPI.Channel)), true))
@@ -48,6 +56,9 @@ func Run(ctx context.Context, c config.Config) error {
 		return err
 	}
 	if err = store.Bootstrap(ctx, pool, c.OrgName, c.AdminEmail, c.AdminPassword); err != nil {
+		return err
+	}
+	if err = (maintenance.Manager{Pool: pool, Config: c}).CheckTimezone(ctx); err != nil {
 		return err
 	}
 	s := &http.Server{Addr: c.HTTPAddr, Handler: New(pool, c)}

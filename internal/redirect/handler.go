@@ -1,13 +1,11 @@
 package redirect
 
 import (
-	"context"
-	"fmt"
 	"github.com/hublinks/hublinks/internal/domain"
 	"github.com/hublinks/hublinks/internal/events"
 	"github.com/hublinks/hublinks/internal/httpx"
 	"github.com/hublinks/hublinks/internal/store"
-	"html"
+	webtmpl "github.com/hublinks/hublinks/web"
 	"net/http"
 	"net/netip"
 	"strings"
@@ -68,18 +66,20 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) notFound(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusNotFound)
-	_, _ = w.Write([]byte("<!doctype html><html lang=\"pt-BR\"><body><h1>Não encontrado</h1><p><a href=\"/privacidade\">Privacidade</a></p></body></html>"))
+	if err := webtmpl.Render(w, "public", "public/404", nil); err != nil {
+		http.Error(w, "erro ao renderizar página", http.StatusInternalServerError)
+	}
 }
 func (h *Handler) preview(w http.ResponseWriter, r *http.Request, l domain.AffiliateLink) {
 	u := strings.TrimSuffix(h.BaseURL, "/") + r.URL.Path
-	img := ""
-	card := "summary"
-	if l.ImageURL != nil {
-		img = fmt.Sprintf(`<meta property="og:image" content="%s">`, html.EscapeString(*l.ImageURL))
-		card = "summary_large_image"
-	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	_, _ = fmt.Fprintf(w, "<!doctype html><html lang=\"pt-BR\"><head><meta name=\"robots\" content=\"noindex\"><meta property=\"og:title\" content=\"%s\"><meta property=\"og:description\" content=\"Disponível em %s\"><meta property=\"og:url\" content=\"%s\"><meta property=\"og:type\" content=\"website\"><meta name=\"twitter:card\" content=\"%s\">%s</head><body><h1>%s</h1><a href=\"%s\">Abrir destino</a><p>Usamos um identificador anônimo para estatísticas, sem cookies. <a href=\"/privacidade\">Privacidade</a></p></body></html>", html.EscapeString(l.Title), html.EscapeString(l.Marketplace.Name), html.EscapeString(u), card, img, html.EscapeString(l.Title), html.EscapeString(l.DestinationURL))
+	data := struct {
+		Title, Marketplace, URL, DestinationURL string
+		ImageURL                                *string
+	}{l.Title, l.Marketplace.Name, u, l.DestinationURL, l.ImageURL}
+	if err := webtmpl.Render(w, "public", "public/preview", data); err != nil {
+		http.Error(w, "erro ao renderizar página", http.StatusInternalServerError)
+	}
 }
 func cut(s string, n int) string {
 	if len(s) > n {
@@ -87,5 +87,3 @@ func cut(s string, n int) string {
 	}
 	return s
 }
-
-var _ = context.Background
