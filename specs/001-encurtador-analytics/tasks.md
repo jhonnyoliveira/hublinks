@@ -49,6 +49,11 @@ com um checkpoint verificável.
   (`go test ./...`), `test-race`, `test-ci` (`go test -v ./...` e falha se houver
   `--- SKIP`), `lint` (`gofmt -l . && go vet ./...`) e `css` (binário
   standalone do Tailwind v4 com versão fixada em `TAILWIND_VERSION`, baixado em `bin/`).
+  Definir no topo
+  `TEST_DATABASE_URL ?= postgresql://hublinks:hublinks@postgres:5432/hublinks` e
+  `export TEST_DATABASE_URL`, para que os alvos de teste funcionem no devcontainer sem passo
+  manual e o CI possa sobrescrever pelo ambiente. A variável também está definida no serviço
+  `dev` do `docker-compose.yml` da raiz.
 - [ ] T004 [P] Atualizar o `.gitignore` com `bin/`, `deploy/.env`, `web/static/css/app.*.css` e
   `web/static/manifest.json`, preservando as entradas existentes.
 

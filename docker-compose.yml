@@ -15,6 +15,9 @@ services:
 
       DATABASE_URL: postgresql://hublinks:hublinks@postgres:5432/hublinks
       DATABASE_URL_MIGRATION: postgresql://hublinks:hublinks@postgres:5432/hublinks
+      # Conexão administrativa usada pelos testes de integração para criar e
+      # remover bancos temporários hl_test_* (não grava no banco hublinks).
+      TEST_DATABASE_URL: postgresql://hublinks:hublinks@postgres:5432/hublinks
       REDIS_URL: redis://redis:6379
       JWT_SECRET: ${JWT_SECRET:-dev-segredo-que-deve-ter-pelo-menos-32-caracteres-no-total}
       ACCESS_TOKEN_TTL: ${ACCESS_TOKEN_TTL:-900}
