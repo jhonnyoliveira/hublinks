@@ -31,60 +31,70 @@ type ChannelRef struct {
 	Name    string    `json:"name"`
 	Segment string    `json:"segment"`
 }
+type MarketplaceRef struct {
+	ID   uuid.UUID `json:"id"`
+	Name string    `json:"name"`
+}
 type LinkView struct {
-	ID                    uuid.UUID          `json:"id"`
-	Title                 string             `json:"title"`
-	DestinationURL        string             `json:"destination_url"`
-	ImageURL              *string            `json:"image_url"`
-	Marketplace           domain.Marketplace `json:"marketplace"`
-	ShortenPolicyOverride *domain.Policy     `json:"shorten_policy_override"`
-	EffectivePolicy       domain.Policy      `json:"effective_policy"`
-	Trackable             bool               `json:"trackable"`
-	Active                bool               `json:"active"`
-	Code                  string             `json:"code"`
-	URLs                  []URL              `json:"urls"`
-	CreatedAt             string             `json:"created_at"`
-	UpdatedAt             string             `json:"updated_at"`
-	DeletedAt             any                `json:"deleted_at"`
+	ID                    uuid.UUID      `json:"id"`
+	Title                 string         `json:"title"`
+	DestinationURL        string         `json:"destination_url"`
+	ImageURL              *string        `json:"image_url"`
+	Marketplace           MarketplaceRef `json:"marketplace"`
+	ShortenPolicyOverride *domain.Policy `json:"shorten_policy_override"`
+	EffectivePolicy       domain.Policy  `json:"effective_policy"`
+	Trackable             bool           `json:"trackable"`
+	Active                bool           `json:"active"`
+	Code                  string         `json:"code"`
+	URLs                  []URL          `json:"urls"`
+	CreatedAt             string         `json:"created_at"`
+	UpdatedAt             string         `json:"updated_at"`
+	DeletedAt             any            `json:"deleted_at"`
 }
 
 func (s Catalog) base() string { return strings.TrimSuffix(s.BaseURL, "/") }
-func (s Catalog) view(ctx context.Context, orgID uuid.UUID, l domain.AffiliateLink) (LinkView, error) {
-	v := LinkView{ID: l.ID, Title: l.Title, DestinationURL: l.DestinationURL, ImageURL: l.ImageURL, Marketplace: l.Marketplace, ShortenPolicyOverride: l.ShortenPolicyOverride, EffectivePolicy: l.EffectivePolicy(), Trackable: l.Trackable(), Active: l.Active, Code: l.Code, CreatedAt: l.CreatedAt.UTC().Format("2006-01-02T15:04:05Z"), UpdatedAt: l.UpdatedAt.UTC().Format("2006-01-02T15:04:05Z"), DeletedAt: l.DeletedAt}
+
+// view monta a visão da API. channels são os canais ativos da organização,
+// carregados uma única vez pelo chamador (evita uma consulta por link).
+func (s Catalog) view(l domain.AffiliateLink, channels []domain.Channel) LinkView {
+	v := LinkView{ID: l.ID, Title: l.Title, DestinationURL: l.DestinationURL, ImageURL: l.ImageURL, Marketplace: MarketplaceRef{ID: l.Marketplace.ID, Name: l.Marketplace.Name}, ShortenPolicyOverride: l.ShortenPolicyOverride, EffectivePolicy: l.EffectivePolicy(), Trackable: l.Trackable(), Active: l.Active, Code: l.Code, CreatedAt: l.CreatedAt.UTC().Format("2006-01-02T15:04:05Z"), UpdatedAt: l.UpdatedAt.UTC().Format("2006-01-02T15:04:05Z"), DeletedAt: l.DeletedAt}
 	if !v.Trackable {
 		v.URLs = []URL{{Label: "original", URL: l.DestinationURL}}
-		return v, nil
+		return v
 	}
 	v.URLs = []URL{{Label: "curta", URL: s.base() + "/" + l.Code}}
-	channels, err := s.Store.ListChannels(ctx, orgID)
-	if err != nil {
-		return LinkView{}, err
-	}
 	for _, ch := range channels {
 		ref := &ChannelRef{ID: ch.ID, Name: ch.Name, Segment: ch.Segment}
 		v.URLs = append(v.URLs, URL{Channel: ref, URL: s.base() + "/" + ch.Segment + "/" + l.Code})
 	}
-	return v, nil
+	return v
+}
+func (s Catalog) viewOne(ctx context.Context, orgID uuid.UUID, l domain.AffiliateLink) (LinkView, error) {
+	channels, err := s.Store.ListChannels(ctx, orgID)
+	if err != nil {
+		return LinkView{}, err
+	}
+	return s.view(l, channels), nil
 }
 func (s Catalog) Link(ctx context.Context, orgID, id uuid.UUID, trash bool) (LinkView, error) {
 	l, err := s.Store.GetLink(ctx, orgID, id, trash)
 	if err != nil {
 		return LinkView{}, err
 	}
-	return s.view(ctx, orgID, l)
+	return s.viewOne(ctx, orgID, l)
 }
 func (s Catalog) Links(ctx context.Context, orgID uuid.UUID, o store.ListOptions) ([]LinkView, int, error) {
 	links, total, err := s.Store.ListLinksWithOptions(ctx, orgID, o)
 	if err != nil {
 		return nil, 0, err
 	}
+	channels, err := s.Store.ListChannels(ctx, orgID)
+	if err != nil {
+		return nil, 0, err
+	}
 	items := make([]LinkView, 0, len(links))
 	for _, l := range links {
-		v, err := s.view(ctx, orgID, l)
-		if err != nil {
-			return nil, 0, err
-		}
-		items = append(items, v)
+		items = append(items, s.view(l, channels))
 	}
 	return items, total, nil
 }
@@ -99,7 +109,7 @@ func (s Catalog) CreateLink(ctx context.Context, l domain.AffiliateLink) (LinkVi
 		return LinkView{}, err
 	}
 	s.invalidate(v.Code)
-	return s.view(ctx, l.OrgID, v)
+	return s.viewOne(ctx, l.OrgID, v)
 }
 func (s Catalog) UpdateLink(ctx context.Context, orgID, id uuid.UUID, title, destination, image *string, marketplace *uuid.UUID, policy *domain.Policy, active *bool) error {
 	code, err := s.Store.UpdateLink(ctx, orgID, id, title, destination, image, marketplace, policy, active)

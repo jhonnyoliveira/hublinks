@@ -223,7 +223,7 @@ acessá-la. Deve redirecionar `302` ao destino; código ou canal inexistente →
   - restaurar link exige marketplace fora da lixeira;
   - item com `purged_at` não é restaurável;
   - excluir canal informa a contagem de links ativos afetados (FR-008c).
-- [ ] T037 [P] [US1] Testes HTTP da API em `internal/api/catalog_test.go`, cobrindo cada rota de
+- [X] T037 [P] [US1] Testes HTTP da API em `internal/api/catalog_test.go`, cobrindo cada rota de
   `contracts/api-v1.md` (marketplaces, channels e affiliate-links: POST/GET/PATCH/DELETE/restore):
   - status, envelope de erro e `?trash=true`;
   - campos `urls`, `effective_policy` e `trackable`;
@@ -231,7 +231,7 @@ acessá-la. Deve redirecionar `302` ao destino; código ou canal inexistente →
   - `DELETE /channels/{id}` → `204` mesmo com links ativos, e `GET /channels/{id}` traz
     `active_links_count`;
   - `DELETE /marketplaces/{id}` com links → `409` e a lista de links.
-- [ ] T038 [P] [US1] Testes HTTP em `internal/redirect/handler_test.go`:
+- [X] T038 [P] [US1] Testes HTTP em `internal/redirect/handler_test.go`:
   - `/{code}` e `/{segment}/{code}` → `302` com `Location`, `Cache-Control: no-store` e sem
     `Set-Cookie`;
   - código com formato inválido, inexistente, inativo, na lixeira ou excluído → `404`;
@@ -260,15 +260,15 @@ acessá-la. Deve redirecionar `302` ao destino; código ou canal inexistente →
   mensagens em pt-BR.
 - [X] T042 [P] [US1] Implementar `internal/domain/code.go`: `NewCode()` com `crypto/rand`,
   alfabeto `[0-9a-z]`, 7 caracteres, descartando palavras reservadas.
-- [ ] T043 [US1] Implementar os repositórios em `internal/store/marketplaces.go`,
+- [X] T043 [US1] Implementar os repositórios em `internal/store/marketplaces.go`,
   `internal/store/channels.go`, `internal/store/links.go` e `internal/store/codes.go`:
   - listagem com `q`, filtros, ordenação e paginação;
   - `trash` (lixeira), `SoftDelete`, `Restore` e `CountActiveLinksByMarketplace`;
   - criação do link e do código na mesma transação, com até 5 tentativas em colisão.
-- [ ] T044 [US1] Implementar `internal/service/catalog.go`, com os casos de uso compartilhados
+- [X] T044 [US1] Implementar `internal/service/catalog.go`, com os casos de uso compartilhados
   por API e painel: validação, regras de lixeira (FR-008a–d), montagem de `urls` a partir de
   `BASE_URL` e dos canais ativos, e invalidação do cache de resolução a cada escrita.
-- [ ] T045 [US1] Implementar os handlers da API em `internal/api/marketplaces.go`,
+- [X] T045 [US1] Implementar os handlers da API em `internal/api/marketplaces.go`,
   `internal/api/channels.go` e `internal/api/links.go`, conforme `contracts/api-v1.md`, sob
   `RequireSession` + `RequireCSRF`.
 - [X] T046 [US1] Implementar `internal/redirect/cache.go`:
@@ -276,7 +276,7 @@ acessá-la. Deve redirecionar `302` ao destino; código ou canal inexistente →
     `(orgID, segment) → channelID`, sob `sync.RWMutex`;
   - TTL de 5 min, cache negativo de 30 s, `Invalidate(code)` e `InvalidateAll()`;
   - teste `internal/redirect/cache_test.go`, executado com `-race`.
-- [ ] T047 [US1] Implementar `internal/redirect/handler.go` para `GET /{code}` e
+- [X] T047 [US1] Implementar `internal/redirect/handler.go` para `GET /{code}` e
   `GET /{segment}/{code}`:
   - valida o formato antes do cache;
   - `404` HTML via `web/templates/public/404.html`;

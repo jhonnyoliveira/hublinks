@@ -67,7 +67,7 @@ func TestCatalogAPIProducesTrackableURLsAndTrashListings(t *testing.T) {
 		t.Fatalf("link: %d %s", w.Code, w.Body.String())
 	}
 	v := decoded(t, w)
-	if v["trackable"] != true || len(v["urls"].([]any)) != 2 {
+	if v["trackable"] != true || v["effective_policy"] != "shorten" || len(v["urls"].([]any)) != 2 {
 		t.Fatalf("URLs rastreáveis ausentes: %#v", v)
 	}
 	linkID := v["id"].(string)
@@ -101,7 +101,8 @@ func TestCatalogAPIDirectLinkAndChannelDetails(t *testing.T) {
 		t.Fatalf("link direto: %d %s", w.Code, w.Body.String())
 	}
 	direct := decoded(t, w)
-	if direct["trackable"] != false || len(direct["urls"].([]any)) != 1 || direct["urls"].([]any)[0].(map[string]any)["label"] != "original" {
+	original := direct["urls"].([]any)[0].(map[string]any)
+	if direct["trackable"] != false || direct["effective_policy"] != "direct" || len(direct["urls"].([]any)) != 1 || original["label"] != "original" || original["url"] != "https://example.com/original" {
 		t.Fatalf("formato de link direto: %#v", direct)
 	}
 	r := httptest.NewRequest(http.MethodGet, "/api/v1/channels/"+channelID, nil)

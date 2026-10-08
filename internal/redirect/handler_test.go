@@ -2,6 +2,7 @@ package redirect
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -55,6 +56,91 @@ func TestHandlerReturnsNotFoundForInvalidAndUnknownURLs(t *testing.T) {
 }
 func TestHandlerRedirectsDirectLink(t *testing.T) {
 	h := &Handler{Catalog: catalogStub{link: domain.AffiliateLink{ID: uuid.New(), OrgID: uuid.New(), Code: "abc1234", DestinationURL: "https://example.com", Active: true, Marketplace: domain.Marketplace{ShortenPolicy: domain.PolicyDirect}}}, Cache: NewCache()}
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/abc1234", nil))
+	if w.Code != http.StatusFound {
+		t.Fatalf("status %d", w.Code)
+	}
+}
+
+func TestHandlerReturns500WhenCatalogFails(t *testing.T) {
+	h := &Handler{Catalog: catalogStub{resolveErr: errors.New("banco indisponível")}, Cache: NewCache()}
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/abc1234", nil))
+	if w.Code != http.StatusInternalServerError || w.Header().Get("Set-Cookie") != "" || w.Header().Get("Location") != "" {
+		t.Fatalf("falha de infraestrutura deve ser 500 sem cookie nem Location: %d %#v", w.Code, w.Header())
+	}
+}
+
+type recorderSpy struct {
+	calls   int
+	code    string
+	channel string
+}
+
+func (s *recorderSpy) Record(_ *http.Request, _ domain.AffiliateLink, code, channel string) {
+	s.calls++
+	s.code, s.channel = code, channel
+}
+
+func trackedHandler(spy *recorderSpy) (*Handler, uuid.UUID) {
+	ch := uuid.New()
+	stub := catalogStub{link: domain.AffiliateLink{ID: uuid.New(), OrgID: uuid.New(), Code: "abc1234", DestinationURL: "https://example.com/d", Active: true, Marketplace: domain.Marketplace{ShortenPolicy: domain.PolicyShorten}}, channels: map[string]uuid.UUID{"wapp": ch}}
+	return &Handler{Catalog: stub, Cache: NewCache(), Recorder: spy, BaseURL: "https://hub.example"}, ch
+}
+
+func TestHandlerCallsRecorderOnlyForRealRedirects(t *testing.T) {
+	spy := &recorderSpy{}
+	h, ch := trackedHandler(spy)
+
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/wapp/abc1234", nil))
+	if w.Code != http.StatusFound || spy.calls != 1 || spy.code != "abc1234" || spy.channel != ch.String() {
+		t.Fatalf("GET: status=%d chamadas=%d code=%q canal=%q", w.Code, spy.calls, spy.code, spy.channel)
+	}
+	if w.Header().Get("Referrer-Policy") != "no-referrer-when-downgrade" {
+		t.Fatalf("Referrer-Policy: %q", w.Header().Get("Referrer-Policy"))
+	}
+
+	// código curto sem canal: channelID vazio
+	h.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/abc1234", nil))
+	if spy.calls != 2 || spy.channel != "" {
+		t.Fatalf("sem canal: chamadas=%d canal=%q", spy.calls, spy.channel)
+	}
+
+	// HEAD resolve como GET, mas não registra visita
+	w = httptest.NewRecorder()
+	h.ServeHTTP(w, httptest.NewRequest(http.MethodHead, "/abc1234", nil))
+	if w.Code != http.StatusFound || spy.calls != 2 {
+		t.Fatalf("HEAD: status=%d chamadas=%d", w.Code, spy.calls)
+	}
+
+	// crawler recebe prévia (200) e não registra visita
+	r := httptest.NewRequest(http.MethodGet, "/abc1234", nil)
+	r.Header.Set("User-Agent", "facebookexternalhit/1.1")
+	w = httptest.NewRecorder()
+	h.ServeHTTP(w, r)
+	if w.Code != http.StatusOK || spy.calls != 2 || w.Header().Get("Set-Cookie") != "" {
+		t.Fatalf("crawler: status=%d chamadas=%d", w.Code, spy.calls)
+	}
+
+	// 404 e métodos não suportados não registram
+	for _, req := range []*http.Request{
+		httptest.NewRequest(http.MethodGet, "/naoexiste/abc1234", nil),
+		httptest.NewRequest(http.MethodGet, "/curto", nil),
+		httptest.NewRequest(http.MethodPost, "/abc1234", nil),
+	} {
+		w = httptest.NewRecorder()
+		h.ServeHTTP(w, req)
+		if w.Code != http.StatusNotFound || spy.calls != 2 {
+			t.Fatalf("%s %s: status=%d chamadas=%d", req.Method, req.URL.Path, w.Code, spy.calls)
+		}
+	}
+}
+
+func TestHandlerWithoutRecorderStillRedirects(t *testing.T) {
+	h, _ := trackedHandler(&recorderSpy{})
+	h.Recorder = nil
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/abc1234", nil))
 	if w.Code != http.StatusFound {

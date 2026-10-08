@@ -70,7 +70,8 @@ func New(pool *pgxpool.Pool, c config.Config) http.Handler {
 	mux.Handle("GET /api/v1/stats/summary", sessions.Require(http.HandlerFunc(api.Stats{Service: stats.Service{Pool: pool, TZ: c.ReportTZ}}.Summary), true))
 	queue := events.NewQueue(c.EventQueueSize, c.EventBatchSize, c.EventFlushInterval, events.DBWriter{Pool: pool})
 	go queue.Run(context.Background())
-	public := &redirect.Handler{Catalog: store.NewCatalog(pool), Cache: resolutionCache, Queue: queue, Pepper: c.Pepper, BaseURL: c.BaseURL, TrustedProxies: c.TrustedProxies, Bots: redirect.NewBotDetector(c.BotDistinctCodes, c.BotWindow)}
+	recorder := redirect.EventRecorder{Queue: queue, Pepper: c.Pepper, TrustedProxies: c.TrustedProxies, Bots: redirect.NewBotDetector(c.BotDistinctCodes, c.BotWindow)}
+	public := &redirect.Handler{Catalog: store.NewCatalog(pool), Cache: resolutionCache, BaseURL: c.BaseURL, Recorder: recorder}
 	mux.Handle("GET /", httpx.NewRateLimiter(c.Pepper, c.PublicRateLimit).Middleware(public))
 	return httpx.Log(mux, slog.New(slog.NewJSONHandler(os.Stdout, nil)))
 }

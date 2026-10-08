@@ -6,9 +6,12 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"github.com/google/uuid"
+	"github.com/hublinks/hublinks/internal/httpx"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"net/http"
+	"net/url"
+	"strings"
 	"time"
 )
 
@@ -93,16 +96,34 @@ func RequireCSRF(next http.Handler) http.Handler {
 			return
 		}
 		s, ok := FromContext(r.Context())
-		if !ok || (r.FormValue("csrf_token") != s.CSRF && r.Header.Get("X-CSRF-Token") != s.CSRF) {
-			http.Error(w, "CSRF inválido", http.StatusForbidden)
+		if !ok || !sameOrigin(r) || (r.FormValue("csrf_token") != s.CSRF && r.Header.Get("X-CSRF-Token") != s.CSRF) {
+			forbidden(w, r)
 			return
 		}
 		next.ServeHTTP(w, r)
 	})
 }
+
+// sameOrigin recusa escritas cujo cabeçalho Origin aponte para outro site.
+// Clientes sem Origin (curl, testes) seguem para a checagem do token.
+func sameOrigin(r *http.Request) bool {
+	origin := r.Header.Get("Origin")
+	if origin == "" {
+		return true
+	}
+	u, err := url.Parse(origin)
+	return err == nil && u.Host == r.Host
+}
+func forbidden(w http.ResponseWriter, r *http.Request) {
+	if strings.HasPrefix(r.URL.Path, "/api/") {
+		httpx.APIError(w, http.StatusForbidden, "forbidden", "CSRF inválido", nil)
+		return
+	}
+	http.Error(w, "CSRF inválido", http.StatusForbidden)
+}
 func unauthorized(w http.ResponseWriter, r *http.Request, api bool) {
 	if api {
-		http.Error(w, "não autenticado", http.StatusUnauthorized)
+		httpx.APIError(w, http.StatusUnauthorized, "unauthorized", "não autenticado", nil)
 		return
 	}
 	http.Redirect(w, r, "/admin/login?next="+r.URL.EscapedPath(), http.StatusSeeOther)
