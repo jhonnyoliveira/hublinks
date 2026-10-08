@@ -133,7 +133,7 @@ func TestCatalogTrashAndUniqueChannel(t *testing.T) {
 	if err = c.SoftDeleteMarketplace(context.Background(), org, mp.ID); err != nil {
 		t.Fatal(err)
 	}
-	if err = c.RestoreLink(context.Background(), org, link.ID); !errors.Is(err, domain.ErrNotFound) {
+	if err = c.RestoreLink(context.Background(), org, link.ID); !errors.Is(err, domain.ErrConflict) {
 		t.Fatalf("restaurou link sem marketplace ativo: %v", err)
 	}
 	if err = c.RestoreMarketplace(context.Background(), org, mp.ID); err != nil {

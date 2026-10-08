@@ -216,7 +216,7 @@ acessá-la. Deve redirecionar `302` ao destino; código ou canal inexistente →
   - nome de marketplace único por org entre não excluídos definitivamente;
   - nova tentativa em colisão de `short_codes.code`;
   - política efetiva = override ou a do marketplace.
-- [ ] T036 [P] [US1] Testes de integração em `internal/service/trash_test.go`:
+- [X] T036 [P] [US1] Testes de integração em `internal/service/trash_test.go`:
   - excluir envia à lixeira (`deleted_at`) e restaurar limpa o campo;
   - marketplace com links fora da lixeira → `ErrConflict` com a lista de links (FR-008c);
   - canal na lixeira mantém o segmento reservado (FR-008d);

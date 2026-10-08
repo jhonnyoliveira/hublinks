@@ -345,6 +345,22 @@ func (c *Catalog) RestoreLink(ctx context.Context, orgID, id uuid.UUID) error {
 		return err
 	}
 	if tag.RowsAffected() == 0 {
+		var marketplaceID uuid.UUID
+		err := c.Pool.QueryRow(ctx, "SELECT marketplace_id FROM affiliate_links WHERE id=$1 AND org_id=$2 AND deleted_at IS NOT NULL AND purged_at IS NULL", id, orgID).Scan(&marketplaceID)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return domain.ErrNotFound
+		}
+		if err != nil {
+			return err
+		}
+		var active bool
+		err = c.Pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM marketplaces WHERE id=$1 AND org_id=$2 AND deleted_at IS NULL AND purged_at IS NULL)", marketplaceID, orgID).Scan(&active)
+		if err != nil {
+			return err
+		}
+		if !active {
+			return domain.ErrConflict
+		}
 		return domain.ErrNotFound
 	}
 	return nil
