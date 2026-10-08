@@ -1,4 +1,23 @@
-@import "tailwindcss";
-@theme { --color-brand: #2563eb; --color-surface: #ffffff; --color-ink: #172033; --radius-card: .75rem; }
-@media (prefers-color-scheme: dark) { :root { --color-surface:#111827; --color-ink:#f8fafc; } }
-* { box-sizing: border-box; } body { margin:0; color:var(--color-ink); background:var(--color-surface); font-family:Arial,sans-serif; } :focus-visible { outline:3px solid #f59e0b; outline-offset:2px; } .card,.table-wrap { border:1px solid color-mix(in srgb,var(--color-ink) 20%,transparent); border-radius:var(--radius-card); padding:1rem; } .badge,.toast { display:inline-block; padding:.25rem .5rem; border-radius:999px; background:#dbeafe; } .empty-state { padding:2rem; text-align:center; } .skeleton { opacity:.7; }
+/* Entrada do Tailwind v4 (binário standalone). Compilado por scripts/build-css.sh
+   para web/static/css/app.<hash>.css. A fonte única dos tokens e dos componentes é
+   web/static/css/base.css; aqui só o expomos como utilitários. */
+@import "tailwindcss" source("../templates");
+@import "../static/css/base.css" layer(components);
+
+/* O modo escuro é por classe (.dark no <html>), definida antes da pintura. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-brand: var(--brand);
+  --color-brand-ink: var(--brand-ink);
+  --color-danger: var(--danger);
+  --color-ok: var(--ok);
+  --radius-card: var(--radius);
+  --shadow-card: var(--shadow);
+  --font-sans: var(--font-body);
+}

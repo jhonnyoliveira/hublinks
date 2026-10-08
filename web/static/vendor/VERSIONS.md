@@ -12,6 +12,8 @@ Para atualizar, baixe a nova versão fixa, confira o `sha256` e atualize esta ta
 | `../fonts/inter-latin-wght-normal.woff2` | @fontsource-variable/inter | 5.1.1 | OFL-1.1 | `npm/@fontsource-variable/inter@5.1.1/files/` |
 | `../fonts/inter-latin-ext-wght-normal.woff2` | @fontsource-variable/inter | 5.1.1 | OFL-1.1 | idem |
 
+| `../../templates/components/icons/*.svg` | lucide-static | 0.468.0 | ISC | `npm/lucide-static@0.468.0/icons/` (somente as formas; a licença está em `icons/LICENSE-lucide.txt`) |
+
 Texto da licença da Inter: `../fonts/LICENSE-inter.txt`.
 
 ## sha256

@@ -1,2 +1,10 @@
 {{define "head"}}<title>Guia de componentes | Hub Links</title>{{end}}
-{{define "content"}}<h1>Guia de componentes</h1><section><h2>Botões e selo</h2>{{template "button" (dict "Type" "button" "Label" "Ação")}}{{template "badge" "Ativo"}}</section><section><h2>Campo</h2>{{template "field" (dict "ID" "example" "Name" "example" "Label" "Exemplo" "Type" "text" "Required" true)}}</section><section><h2>Estados</h2>{{template "empty_state" "Cadastre seu primeiro link."}}{{template "skeleton" .}}</section>{{end}}
+{{define "content"}}<h1>Guia de componentes</h1>
+<section aria-labelledby="g-botoes"><h2 id="g-botoes" class="section-title">Botões e selos</h2>
+{{template "button" (dict "Label" "Primário" "Variant" "primary" "Icon" "plus")}} {{template "button" (dict "Label" "Padrão")}} {{template "button" (dict "Label" "Perigo" "Variant" "danger" "Icon" "trash-2")}} {{template "button" (dict "Icon" "copy" "AriaLabel" "Copiar" "Small" true)}}
+{{template "badge" (dict "Text" "Ativo" "Tone" "ok")}} {{template "badge" (dict "Text" "Inativo" "Tone" "inactive")}} {{template "badge" (dict "Text" "Não rastreável" "Tone" "warn")}}</section>
+<section aria-labelledby="g-campo"><h2 id="g-campo" class="section-title">Campo</h2><form>{{template "field" (dict "ID" "example" "Name" "example" "Label" "Exemplo" "Hint" "Texto de ajuda." "Required" true)}}{{template "field" (dict "ID" "example-err" "Name" "example2" "Label" "Com erro" "Error" "Mensagem de erro.")}}</form></section>
+<section aria-labelledby="g-estados"><h2 id="g-estados" class="section-title">Estados</h2>{{template "empty_state" (dict "Icon" "inbox" "Text" "Cadastre seu primeiro link." "ActionHref" "/admin/links/new" "ActionLabel" "Novo link")}}{{template "skeleton" .}}</section>
+<section aria-labelledby="g-tabela"><h2 id="g-tabela" class="section-title">Tabela e cartão</h2>{{template "table" .Table}}{{template "card" (dict "Title" "Cartão" "Text" "Conteúdo de exemplo." "Href" "/admin" "Action" "Ir ao painel")}}</section>
+<section aria-labelledby="g-nav"><h2 id="g-nav" class="section-title">Abas e período</h2>{{template "tabs" .Tabs}}{{template "period_picker" .Periods}}</section>
+{{end}}

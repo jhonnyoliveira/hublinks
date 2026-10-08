@@ -1,1 +1,4 @@
-{{define "modal"}}<dialog aria-label="{{.Label}}">{{.Content}}</dialog>{{end}}
+{{/* modal: casca única do painel. É um <dialog> nativo aberto com showModal(): papel de diálogo,
+   foco preso, Esc fecha e o foco volta ao elemento que o abriu. O conteúdo (h2#modal-title +
+   formulário) chega por HTMX em #modal-body. */}}
+{{define "modal"}}<dialog id="modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"><div id="modal-body"></div></dialog>{{end}}

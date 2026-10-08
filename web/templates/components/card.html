@@ -1,1 +1,2 @@
-{{define "card"}}<section class="card">{{.}}</section>{{end}}
+{{/* card: Title, Text, Href + Action (link opcional) */}}
+{{define "card"}}<section class="card card-pad">{{if .Title}}<h2 class="card-title">{{.Title}}</h2>{{end}}{{if .Text}}<p>{{.Text}}</p>{{end}}{{if .Href}}<a class="btn" href="{{.Href}}">{{.Action}}</a>{{end}}</section>{{end}}

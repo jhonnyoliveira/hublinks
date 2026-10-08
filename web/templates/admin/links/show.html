@@ -1,7 +1,7 @@
 {{define "head"}}<title>{{.Link.Title}} | Hub Links</title>{{end}}
 {{define "content"}}
 {{if .Flash}}<div hidden x-data x-init="$nextTick(() => $dispatch('toast', {message: $el.dataset.message}))" data-message="{{.Flash}}"></div>{{end}}
-<div class="page-head"><h1>{{.Link.Title}}</h1><span><a class="btn" href="/admin/links/{{.Link.ID}}/edit">Editar</a> <button class="btn btn-danger" hx-get="/admin/links/{{.Link.ID}}/delete" hx-target="#modal-body" hx-swap="innerHTML">Excluir</button></span></div>
+<div class="page-head"><h1>{{.Link.Title}}</h1><span><a class="btn" href="/admin/links/{{.Link.ID}}/edit">{{icon "pencil"}} Editar</a> <button class="btn btn-danger" hx-get="/admin/links/{{.Link.ID}}/delete" hx-target="#modal-body" hx-swap="innerHTML">{{icon "trash-2"}} Excluir</button></span></div>
 {{if not .Link.Active}}<p class="alert" role="status">Este link está inativo: o código e as URLs abaixo respondem “não encontrado”.</p>{{end}}
 <div class="card"><dl class="details">
 <dt>Marketplace</dt><dd>{{.Link.Marketplace.Name}}</dd>
@@ -16,6 +16,6 @@
 <div class="card">{{range .Link.URLs}}<div class="url-row">
 <strong>{{if .Channel}}{{.Channel.Name}}{{else if eq .Label "original"}}Original{{else}}Curta{{end}}</strong>
 <code>{{.URL}}</code>
-<button type="button" class="btn btn-sm" x-data="copy" @click="run()" data-copy="{{.URL}}" aria-label="Copiar URL{{if .Channel}} de {{.Channel.Name}}{{end}}"><span x-show="!copied">Copiar</span><span x-show="copied" x-cloak>Copiado!</span></button>
+<button type="button" class="btn btn-sm" x-data="copy" @click="run()" data-copy="{{.URL}}" aria-label="Copiar URL{{if .Channel}} de {{.Channel.Name}}{{end}}"><span x-show="!copied">{{icon "copy"}} Copiar</span><span x-show="copied" x-cloak>{{icon "check"}} Copiado!</span></button>
 </div>{{end}}</div>
 {{end}}

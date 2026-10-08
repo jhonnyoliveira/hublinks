@@ -1,1 +1,2 @@
-{{define "table"}}<div class="table-wrap">{{.}}</div>{{end}}
+{{/* table: Caption (leitores de tela), Columns []string, Rows [][]string, EmptyText. As células são texto (escapado). */}}
+{{define "table"}}<div class="table-wrap"><table><caption class="sr-only">{{.Caption}}</caption><thead><tr>{{range .Columns}}<th scope="col">{{.}}</th>{{end}}</tr></thead><tbody>{{range .Rows}}<tr>{{range .}}<td>{{.}}</td>{{end}}</tr>{{else}}<tr><td colspan="{{len .Columns}}" class="empty">{{.EmptyText}}</td></tr>{{end}}</tbody></table></div>{{end}}

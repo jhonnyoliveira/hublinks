@@ -1,2 +1,8 @@
 {{define "head"}}<title>Painel | Hub Links</title>{{end}}
-{{define "content"}}<h1>Painel</h1><nav aria-label="Administração"><a href="/admin/marketplaces">Marketplaces</a> <a href="/admin/channels">Canais</a> <a href="/admin/links">Links</a></nav><p>Cadastre marketplaces, canais e links. As estatísticas são atualizadas de forma assíncrona.</p>{{end}}
+{{define "content"}}<h1>Painel</h1>
+<p class="muted">Cadastre marketplaces, canais e links. As estatísticas são atualizadas de forma assíncrona.</p>
+<div class="cards-grid">
+{{template "card" (dict "Title" "Marketplaces" "Text" "Lojas de origem dos links e a política padrão de cada uma." "Href" "/admin/marketplaces" "Action" "Gerenciar marketplaces")}}
+{{template "card" (dict "Title" "Canais" "Text" "WhatsApp, Telegram e outros: cada canal gera uma URL por link." "Href" "/admin/channels" "Action" "Gerenciar canais")}}
+{{template "card" (dict "Title" "Links" "Text" "Cadastre links, copie as URLs e acompanhe o que está ativo." "Href" "/admin/links" "Action" "Gerenciar links")}}
+</div>{{end}}

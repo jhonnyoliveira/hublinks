@@ -68,7 +68,7 @@ Corresponde ao épico 1 e às bases do épico 2.
 
 ### Configuração e banco
 
-- [ ] T005 Escrever testes de `internal/config/config_test.go`:
+- [X] T005 Escrever testes de `internal/config/config_test.go`:
   - falha nomeando a variável quando faltam `DATABASE_URL`, `PEPPER`, `BASE_URL` ou
     `PRIVACY_CONTACT`;
   - rejeita `PEPPER` com menos de 32 bytes;
@@ -100,7 +100,7 @@ Corresponde ao épico 1 e às bases do épico 2.
 
 ### Bootstrap, saúde e HTTP base
 
-- [ ] T013 Escrever testes de integração em `internal/store/bootstrap_test.go`:
+- [X] T013 Escrever testes de integração em `internal/store/bootstrap_test.go`:
   - cria a org padrão (`ORG_NAME`) só se nenhuma existir;
   - cria o admin de `ADMIN_EMAIL`/`ADMIN_PASSWORD` só se `users` estiver vazia, com membership
     `admin`;
@@ -112,9 +112,9 @@ Corresponde ao épico 1 e às bases do épico 2.
     só quando o par da conexão está em `TRUSTED_PROXIES`;
   - `Normalize(ip)` mantém o IPv4 completo e reduz IPv6 a `/64`;
   - `Key(pepper, ip)` retorna `HMAC(PEPPER, "rl|"+ip_norm)`.
-- [ ] T016 [P] Escrever `internal/httpx/clientip_test.go`: proxy confiável e não confiável, XFF
+- [X] T016 [P] Escrever `internal/httpx/clientip_test.go`: proxy confiável e não confiável, XFF
   com várias entradas, IPv6 `/64`, IPv4-mapped e cabeçalho forjado ignorado.
-- [ ] T017 [P] Implementar `internal/httpx/log.go`: middleware `slog` JSON que registra método,
+- [X] T017 [P] Implementar `internal/httpx/log.go`: middleware `slog` JSON que registra método,
   rota, status e duração, mas nunca `RemoteAddr`, XFF ou query string. Teste em
   `internal/httpx/log_test.go`: nenhum IP aparece na saída.
 - [X] T018 [P] Implementar `internal/auth/password.go` (argon2id m=64 MiB, t=3, p=2, formato PHC;
@@ -122,7 +122,7 @@ Corresponde ao épico 1 e às bases do épico 2.
 - [X] T019 Implementar `internal/httpx/health.go` (`GET /healthz` → `200 {"status":"ok"}` ou
   `503 {"status":"unavailable","checks":{"database":"error"}}`, sem limite de taxa) e o teste
   `internal/httpx/health_test.go`.
-- [ ] T020 Implementar `internal/server/server.go`:
+- [X] T020 Implementar `internal/server/server.go`:
   - monta o `http.ServeMux`, os middlewares de log e recuperação de pânico e
     `http.CrossOriginProtection` nas rotas `/admin` e `/api/v1`;
   - `serve` executa config → migrações → bootstrap → HTTP com shutdown gracioso (`SIGTERM`).
@@ -130,31 +130,31 @@ Corresponde ao épico 1 e às bases do épico 2.
 
 ### Sessão, CSRF e login
 
-- [ ] T021 Escrever testes de integração em `internal/auth/session_test.go`:
+- [X] T021 Escrever testes de integração em `internal/auth/session_test.go`:
   - login cria sessão com token novo; o cookie `hl_session` tem `HttpOnly; Secure;
     SameSite=Lax; Path=/`;
   - sessão expira após 7 dias sem uso;
   - logout invalida a sessão;
   - POST sem `csrf_token`/`X-CSRF-Token` válido → `403`;
   - rota protegida sem sessão → `303 /admin/login?next=…` (HTML) ou `401` (API).
-- [ ] T022 Implementar `internal/auth/session.go`:
+- [X] T022 Implementar `internal/auth/session.go`:
   - repositório `sessions` (token de 32 bytes aleatórios, armazenando `token_hash = SHA-256`);
   - middlewares `RequireSession` (injeta `userID` e `orgID` no contexto) e `RequireCSRF`.
-- [ ] T023 Implementar `internal/admin/login.go`:
+- [X] T023 Implementar `internal/admin/login.go`:
   - `GET/POST /admin/login` com erro genérico "E-mail ou senha inválidos";
   - `POST /admin/logout`;
   - redirecionamento seguro de `next` (somente caminhos `/admin…`).
 
 ### Camadas compartilhadas e interface base
 
-- [ ] T024 [P] Implementar `internal/api/respond.go`: helpers JSON, envelope de erro
+- [X] T024 [P] Implementar `internal/api/respond.go`: helpers JSON, envelope de erro
   `{"error":{"code","message","fields"}}` com os códigos `validation_failed`/422,
   `not_found`/404, `conflict`/409, `unauthorized`/401, `forbidden`/403 e `rate_limited`/429, e
   paginação (`page`, `per_page` padrão 20, máximo 100).
-- [ ] T025 [P] Implementar `internal/domain/errors.go`, com os erros de domínio
+- [X] T025 [P] Implementar `internal/domain/errors.go`, com os erros de domínio
   (`ErrNotFound`, `ErrConflict`, `ValidationError{Fields map[string]string}`) mapeados pela API e
   pelo painel.
-- [ ] T026 [P] Criar os tokens de design e o CSS de entrada em `web/assets/app.css`
+- [X] T026 [P] Criar os tokens de design e o CSS de entrada em `web/assets/app.css`
   (Tailwind v4 `@theme`):
   - cores semânticas para os modos claro e escuro (`.dark`), com contraste AA;
   - espaçamentos, raios, sombras e tipografia Inter;
@@ -162,13 +162,13 @@ Corresponde ao épico 1 e às bases do épico 2.
 - [X] T027 [P] Vendorizar em `web/static/vendor/` as versões fixadas de `htmx.min.js` (2.x),
   `alpine.min.js` (3.x) e `uplot.iife.min.js`/`uPlot.min.css`, e a fonte Inter woff2 em
   `web/static/fonts/`, registrando versões e licenças em `web/static/vendor/VERSIONS.md`.
-- [ ] T028 Implementar `internal/assets/assets.go` com `embed` de `web/static` e `web/templates`,
+- [X] T028 Implementar `internal/assets/assets.go` com `embed` de `web/static` e `web/templates`,
   leitura de `web/static/manifest.json` (nome com hash) e a função de template `asset`. Arquivos
   com hash saem com `Cache-Control: public, max-age=31536000, immutable`.
-- [ ] T029 Criar o script `scripts/build-css.sh`: compila `web/assets/app.css` com o Tailwind
+- [X] T029 Criar o script `scripts/build-css.sh`: compila `web/assets/app.css` com o Tailwind
   standalone minificado, grava `web/static/css/app.<sha256-8>.css` e `web/static/manifest.json`.
   Chamado por `make css`.
-- [ ] T030 Criar o layout `web/templates/layouts/admin.html`:
+- [X] T030 Criar o layout `web/templates/layouts/admin.html`:
   - navegação lateral fixa em `lg` e menu recolhível no celular (Alpine);
   - alternância de tema (`localStorage`, respeitando `prefers-color-scheme`, sem flash);
   - `hx-headers` com `X-CSRF-Token`;
@@ -176,13 +176,13 @@ Corresponde ao épico 1 e às bases do épico 2.
   Criar também `web/templates/layouts/public.html`, mínimo e sem scripts de terceiros, que inclui
   sempre o componente `privacy_notice` (criado no T031; finalize o layout público após o T031), de modo que prévia, 404 e `/privacidade` herdem
   o aviso (constituição II, FR-022).
-- [ ] T031 [P] Criar os componentes parciais em `web/templates/components/`: `button`, `field`
+- [X] T031 [P] Criar os componentes parciais em `web/templates/components/`: `button`, `field`
   (rótulo, erro inline, `aria-describedby`), `table`, `card`, `badge`, `modal`
   (`role="dialog"`, foco preso), `toast`, `tabs`, `empty_state`, `skeleton`, `period_picker`,
   `icons/*.svg` (Lucide inline) e `privacy_notice` (aviso informativo, sem pedido de
   consentimento, com link para `/privacidade`, botão "Entendi" e descarte lembrado em
   `localStorage` por script inline mínimo, sem cookie).
-- [ ] T032 Criar a tela de login `web/templates/admin/login.html` usando os componentes.
+- [X] T032 Criar a tela de login `web/templates/admin/login.html` usando os componentes.
 
 **Checkpoint**: `make css && go run ./cmd/hublinks` sobe; `/healthz` responde 200; o login do
 admin inicial funciona; os testes passam.

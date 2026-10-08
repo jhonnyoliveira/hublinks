@@ -27,7 +27,7 @@ func TestMarketplacesPageEscapesNamesAndOffersCreate(t *testing.T) {
 	if w.Code != http.StatusOK {
 		t.Fatal(w.Code)
 	}
-	mustContain(t, w, "<html", "Novo marketplace", `hx-get="/admin/marketplaces/new"`, "&lt;script&gt;alert(1)&lt;/script&gt;", `name="csrf-token" content="csrf-token"`, "/static/vendor/htmx.min.js")
+	mustContain(t, w, "<html", "Novo marketplace", `hx-get="/admin/marketplaces/new"`, "&lt;script&gt;alert(1)&lt;/script&gt;", `hx-headers=`, `X-CSRF-Token`, "/static/vendor/htmx.min.js")
 	mustNotContain(t, w, "<script>alert(1)")
 }
 

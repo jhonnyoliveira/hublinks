@@ -1,9 +1,9 @@
 {{define "head"}}<title>Marketplaces | Hub Links</title>{{end}}
 {{define "content"}}
-<div class="page-head"><h1>Marketplaces</h1><button class="btn btn-primary" hx-get="/admin/marketplaces/new" hx-target="#modal-body" hx-swap="innerHTML">Novo marketplace</button></div>
+<div class="page-head"><h1>Marketplaces</h1><button class="btn btn-primary" hx-get="/admin/marketplaces/new" hx-target="#modal-body" hx-swap="innerHTML">{{icon "plus"}} Novo marketplace</button></div>
 <form class="toolbar" role="search" hx-get="/admin/marketplaces" hx-target="#marketplaces-list" hx-swap="outerHTML" hx-trigger="input changed delay:300ms, search, submit" hx-push-url="true">
   <div class="field"><label for="q">Buscar por nome</label><input id="q" name="q" type="search" value="{{.Q}}" autocomplete="off"></div>
-  <button class="btn">Buscar</button>
+  <button class="btn">{{icon "search"}} Buscar</button>
 </form>
 {{template "marketplaces_list" .}}
 {{end}}

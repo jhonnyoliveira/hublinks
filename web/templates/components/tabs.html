@@ -1,1 +1,2 @@
-{{define "tabs"}}<nav role="tablist">{{.}}</nav>{{end}}
+{{/* tabs: Label (nome da navegação), Items [{Href, Text, Current}] */}}
+{{define "tabs"}}<nav class="tabs" aria-label="{{.Label}}">{{range .Items}}<a href="{{.Href}}"{{if .Current}} aria-current="page"{{end}}>{{.Text}}</a>{{end}}</nav>{{end}}

@@ -1,10 +1,10 @@
 {{define "head"}}<title>Canais | Hub Links</title>{{end}}
 {{define "content"}}
-<div class="page-head"><h1>Canais</h1><button class="btn btn-primary" hx-get="/admin/channels/new" hx-target="#modal-body" hx-swap="innerHTML">Novo canal</button></div>
+<div class="page-head"><h1>Canais</h1><button class="btn btn-primary" hx-get="/admin/channels/new" hx-target="#modal-body" hx-swap="innerHTML">{{icon "plus"}} Novo canal</button></div>
 <p class="muted">Cada canal gera uma URL própria por link (<code>/segmento/código</code>), para medir de onde vêm os cliques.</p>
 <form class="toolbar" role="search" hx-get="/admin/channels" hx-target="#channels-list" hx-swap="outerHTML" hx-trigger="input changed delay:300ms, search, submit" hx-push-url="true">
   <div class="field"><label for="q">Buscar por nome</label><input id="q" name="q" type="search" value="{{.Q}}" autocomplete="off"></div>
-  <button class="btn">Buscar</button>
+  <button class="btn">{{icon "search"}} Buscar</button>
 </form>
 {{template "channels_list" .}}
 {{end}}

@@ -11,14 +11,16 @@
 
 O repositório já contém a aplicação Go, a fundação de configuração, banco, migrações, saúde, autenticação, renderização por `html/template`, catálogo e redirecionamento. O `package.json` continua genérico e não define a stack de testes.
 
-O trabalho da **User Story 1 — Cadastrar link e divulgar por canal** (T033–T052) está implementado e testado: API `/api/v1`, serviço, repositórios, redirecionamento 302 com cache, painel (marketplaces, canais, links, lixeira) e roteamento. Falta o **checkpoint da US1**: conferir os cenários 1–5 da spec e o passo 3 do `quickstart.md`. Não avance para a User Story 2 antes dele.
+A fundação (T001–T032) foi auditada contra a descrição de cada tarefa e a **User Story 1** (T033–T052) está implementada e testada: configuração sem vazamento de segredos, sessões com expiração por inatividade, login, API `/api/v1`, serviço, repositórios, redirecionamento 302 com cache, painel (marketplaces, canais, links, lixeira), componentes e tema claro/escuro, e o roteamento. Falta o **checkpoint da US1**: conferir os cenários 1–5 da spec e o passo 3 do `quickstart.md`. Não avance para a User Story 2 antes dele.
 
-Pendências conhecidas, a tratar antes ou junto do checkpoint:
+Pontos de atenção:
 
-- **Fundação sem marcação** no `tasks.md` (T005, T013, T016–T026, T028–T032): parte do código existe, mas cada tarefa precisa ser conferida contra a sua descrição antes de ser marcada.
-- **Estilo provisório:** o painel usa `web/static/css/app.dev.css` escrito à mão, com classes semânticas. O build com Tailwind standalone (T026/T029), a alternância de tema e o menu recolhível (T030) ainda não existem.
-- **Testes de integração** exigem `TEST_DATABASE_URL` (veja `Makefile` e `quickstart.md`); sem ela, eles são pulados em silêncio. Use `make test-ci` para falhar quando houver testes pulados.
-- O comportamento do JavaScript do painel (HTMX/Alpine) foi verificado em Chromium headless com Playwright instalado fora do repositório; ainda não há suíte de navegador versionada.
+- **Testes de integração** exigem `TEST_DATABASE_URL`; sem ela, são pulados em silêncio. Use `make test-ci`, que falha se houver testes pulados. Detalhes e comandos em `docs/desenvolvimento.md`.
+- **CSS:** a fonte única é `web/static/css/base.css`; `make css` gera o build do Tailwind com hash. Arquivos de template não podem começar com `_` (o `go:embed` os ignora).
+- **JavaScript do painel** (HTMX, Alpine, modal, tema) é verificado em Chromium headless com Playwright fora do repositório; ainda não há suíte de navegador versionada.
+- **Métricas:** `METRICS_ADDR` é lido, mas ainda não há servidor de métricas; o contrato diz que valor vazio desativa, o que o carregador atual não distingue de "não definido". Resolver junto da métrica de eventos descartados.
+- **Verificação de origem** (`http.CrossOriginProtection` e `RequireCSRF`) compara `Origin` com o `Host` da requisição: o proxy reverso do deploy precisa preservá-lo.
+- **Fila de eventos:** `server.New` inicia o worker com `context.Background()`, então os eventos pendentes não são descarregados no desligamento. Tratar na User Story 2.
 
 - Implemente somente o trabalho solicitado, em incrementos entregáveis. Criar este arquivo não autoriza iniciar a aplicação.
 - Siga a sequência da seção 13 do escopo: fundação; modelo e CRUD; redirecionamento; eventos; bots e preview; estatísticas e retenção; painel; endurecimento.

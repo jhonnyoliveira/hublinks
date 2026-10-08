@@ -3,12 +3,12 @@
 <caption class="sr-only">Lista de links</caption>
 <thead><tr><th scope="col">Título</th><th scope="col" class="hide-sm">Marketplace</th><th scope="col" class="hide-sm">Política</th><th scope="col">Ativo</th><th scope="col"><span class="sr-only">Ações</span></th></tr></thead>
 <tbody>{{range .Items}}{{template "link_row" .}}{{end}}</tbody></table>{{template "pager" .Pager}}</div>
-{{else}}<div class="card empty">{{if .Filtered}}Nenhum link encontrado com estes filtros.{{else}}Nenhum link cadastrado. Cadastre o primeiro para gerar a URL curta e as URLs por canal.{{end}}</div>{{end}}
+{{else}}{{if .Filtered}}{{template "empty_state" (dict "Icon" "search" "Text" "Nenhum link encontrado com estes filtros.")}}{{else}}{{template "empty_state" (dict "Icon" "link" "Text" "Nenhum link cadastrado. Cadastre o primeiro para gerar a URL curta e as URLs por canal.")}}{{end}}{{end}}
 </div>{{end}}
 {{define "link_row"}}<tr id="link-{{.ID}}">
 <td><a href="/admin/links/{{.ID}}">{{.Title}}</a>{{if not .Active}} <span class="badge badge-inactive">Inativo</span>{{end}}</td>
 <td class="hide-sm">{{.Marketplace.Name}}</td>
 <td class="hide-sm">{{template "policy_badge" .EffectivePolicy}}</td>
 <td><button type="button" class="switch" role="switch" aria-checked="{{.Active}}" aria-label="Ativo: {{.Title}}" hx-post="/admin/links/{{.ID}}/toggle" hx-vals='{"active":"{{if .Active}}false{{else}}true{{end}}"}' hx-target="closest tr" hx-swap="outerHTML"><span class="track" aria-hidden="true"></span></button></td>
-<td class="actions"><a class="btn btn-sm" href="/admin/links/{{.ID}}">Ver</a> <button class="btn btn-sm" hx-get="/admin/links/{{.ID}}/delete" hx-target="#modal-body" hx-swap="innerHTML" aria-label="Excluir {{.Title}}">Excluir</button></td>
+<td class="actions"><a class="btn btn-sm" href="/admin/links/{{.ID}}">{{icon "external-link"}} Ver</a> <button class="btn btn-sm" hx-get="/admin/links/{{.ID}}/delete" hx-target="#modal-body" hx-swap="innerHTML" aria-label="Excluir {{.Title}}">{{icon "trash-2"}} Excluir</button></td>
 </tr>{{end}}

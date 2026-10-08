@@ -1,1 +1,4 @@
+{{/* toast_region: região viva onde o Alpine mostra os avisos (evento "toast" com {message, kind}). */}}
+{{define "toast_region"}}<div class="toasts" x-data="toasts" @toast.window="add($event.detail)" aria-live="polite" role="status"><template x-for="t in items" :key="t.id"><p class="toast" :class="'toast-' + t.kind" x-text="t.message"></p></template></div>{{end}}
+{{/* toast: aviso renderizado pelo servidor */}}
 {{define "toast"}}<p role="status" class="toast">{{.}}</p>{{end}}

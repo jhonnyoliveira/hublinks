@@ -1,14 +1,22 @@
 {{define "admin"}}<!doctype html>
 <html lang="pt-BR">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">{{if .CSRF}}<meta name="csrf-token" content="{{.CSRF}}">{{end}}
-<meta name="htmx-config" content='{"responseHandling":[{"code":"204","swap":false},{"code":"[23]..","swap":true},{"code":"409","swap":true},{"code":"422","swap":true},{"code":"[45]..","swap":false,"error":true}]}'>
-<link rel="stylesheet" href="/static/css/app.dev.css">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="htmx-config" content='{"responseHandling":[{"code":"204","swap":false},{"code":"[23]..","swap":true},{"code":"409","swap":true},{"code":"422","swap":true},{"code":"[45]..","swap":false,"error":true}]}'>
+{{template "theme_init"}}<link rel="stylesheet" href="{{asset "app.css"}}">
 <script src="/static/vendor/htmx.min.js" defer></script><script src="/static/js/panel.js" defer></script><script src="/static/vendor/alpine.min.js" defer></script>{{template "head" .}}</head>
-<body>
+<body{{if .CSRF}} hx-headers='{{printf "{\"X-CSRF-Token\":%q}" .CSRF}}'{{end}}>
 <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
-<header class="topbar"><a class="brand" href="/admin">Hub Links</a>{{if .CSRF}}<nav aria-label="Principal"><a href="/admin/marketplaces">Marketplaces</a> <a href="/admin/channels">Canais</a> <a href="/admin/links">Links</a> <a href="/admin/lixeira">Lixeira</a></nav><form action="/admin/logout" method="post"><input type="hidden" name="csrf_token" value="{{.CSRF}}"><button class="btn btn-ghost">Sair</button></form>{{end}}</header>
-<div class="toasts" x-data="toasts" @toast.window="add($event.detail)" aria-live="polite" role="status"><template x-for="t in items" :key="t.id"><p class="toast" :class="'toast-' + t.kind" x-text="t.message"></p></template></div>
+{{if .CSRF}}<div class="shell" x-data="{menu: false}" @keydown.escape.window="menu = false">
+<header class="mobilebar"><button type="button" class="btn btn-ghost btn-icon" aria-label="Abrir menu" aria-controls="sidebar" :aria-expanded="menu" @click="menu = !menu">{{icon "menu"}}</button><a class="brand" href="/admin">Hub Links</a>{{template "theme_toggle" "icon"}}</header>
+<div class="scrim" x-show="menu" x-cloak @click="menu = false" aria-hidden="true"></div>
+<aside id="sidebar" class="sidebar" :class="{'is-open': menu}" aria-label="Barra lateral">
+  <a class="brand" href="/admin">{{icon "link"}} Hub Links</a>
+  <nav aria-label="Principal"><a href="/admin/marketplaces">{{icon "store"}} Marketplaces</a><a href="/admin/channels">{{icon "megaphone"}} Canais</a><a href="/admin/links">{{icon "link"}} Links</a><a href="/admin/lixeira">{{icon "trash-2"}} Lixeira</a></nav>
+  <div class="sidebar-foot">{{template "theme_toggle" "text"}}<form action="/admin/logout" method="post"><input type="hidden" name="csrf_token" value="{{.CSRF}}"><button class="btn btn-ghost">{{icon "log-out"}} Sair</button></form></div>
+</aside>
 <main id="conteudo">{{template "content" .}}</main>
-<dialog id="modal" class="modal" aria-labelledby="modal-title"><div id="modal-body"></div></dialog>
+</div>{{else}}<main id="conteudo" class="auth">{{template "content" .}}</main>{{end}}
+{{template "modal"}}
+{{template "toast_region"}}
 </body>
 </html>{{end}}
+{{define "theme_toggle"}}<button type="button" class="btn btn-ghost{{if eq . "icon"}} btn-icon{{end}}" data-theme-toggle aria-pressed="false" aria-label="Alternar tema escuro"><span class="icon-moon">{{icon "moon"}}</span><span class="icon-sun">{{icon "sun"}}</span>{{if eq . "text"}} <span>Tema</span>{{end}}</button>{{end}}

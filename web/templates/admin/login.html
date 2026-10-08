@@ -1,2 +1,9 @@
 {{define "head"}}<title>Entrar | Hub Links</title>{{end}}
-{{define "content"}}<h1>Entrar</h1>{{if .Error}}<p role="alert">{{.Error}}</p>{{end}}<form method="post" action="/admin/login"><input type="hidden" name="next" value="{{.Next}}"><label for="email">E-mail</label><input id="email" name="email" type="email" required autocomplete="email"><label for="password">Senha</label><input id="password" name="password" type="password" required autocomplete="current-password"><button>Entrar</button></form>{{end}}
+{{define "content"}}<h1>Entrar</h1>
+<form class="card card-pad" method="post" action="/admin/login">
+  {{if .Error}}<p class="alert alert-danger" role="alert">{{.Error}}</p>{{end}}
+  <input type="hidden" name="next" value="{{.Next}}">
+  {{template "field" (dict "ID" "email" "Name" "email" "Label" "E-mail" "Type" "email" "Required" true "Autocomplete" "email" "Autofocus" true)}}
+  {{template "field" (dict "ID" "password" "Name" "password" "Label" "Senha" "Type" "password" "Required" true "Autocomplete" "current-password")}}
+  {{template "button" (dict "Label" "Entrar" "Type" "submit" "Variant" "primary")}}
+</form>{{end}}

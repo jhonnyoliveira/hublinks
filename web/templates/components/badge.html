@@ -1,1 +1,2 @@
-{{define "badge"}}<span class="badge">{{.}}</span>{{end}}
+{{/* badge: Text, Tone (ok|off|warn|brand|inactive) */}}
+{{define "badge"}}<span class="badge{{if .Tone}} badge-{{.Tone}}{{end}}">{{.Text}}</span>{{end}}

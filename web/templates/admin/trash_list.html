@@ -5,7 +5,7 @@
 <tbody>{{range .Items}}<tr>
 <td>{{.Name}}</td><td><span class="badge">{{.Type}}</span></td>
 <td>{{if eq .Days 0}}<span class="badge badge-warn">expira hoje</span>{{else}}{{.Days}} {{if eq .Days 1}}dia{{else}}dias{{end}}{{end}}</td>
-<td class="actions">{{if .BlockedBy}}<span class="muted">Restaure antes o marketplace “{{.BlockedBy}}”.</span>{{else}}<button class="btn btn-sm" hx-post="/admin/{{.Path}}/{{.ID}}/restore" hx-target="#trash-list" hx-swap="outerHTML" hx-disabled-elt="this" aria-label="Restaurar {{.Name}}">Restaurar</button>{{end}}</td>
+<td class="actions">{{if .BlockedBy}}<span class="muted">Restaure antes o marketplace “{{.BlockedBy}}”.</span>{{else}}<button class="btn btn-sm" hx-post="/admin/{{.Path}}/{{.ID}}/restore" hx-target="#trash-list" hx-swap="outerHTML" hx-disabled-elt="this" aria-label="Restaurar {{.Name}}">{{icon "rotate-ccw"}} Restaurar</button>{{end}}</td>
 </tr>{{end}}</tbody></table></div>
-{{else}}<div class="card empty">A lixeira está vazia.</div>{{end}}
+{{else}}{{template "empty_state" (dict "Icon" "trash-2" "Text" "A lixeira está vazia.")}}{{end}}
 </div>{{end}}

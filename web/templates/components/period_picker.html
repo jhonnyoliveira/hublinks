@@ -1,1 +1,2 @@
-{{define "period_picker"}}<label for="period">Período</label><select id="period" name="period"><option value="7d">7 dias</option><option value="30d">30 dias</option><option value="90d">90 dias</option></select>{{end}}
+{{/* period_picker: Items [{Href, Text, Current}]. Cada período é um link, sem JavaScript. */}}
+{{define "period_picker"}}<nav class="period-picker" aria-label="Período">{{range .Items}}<a href="{{.Href}}"{{if .Current}} aria-current="true"{{end}}>{{.Text}}</a>{{end}}</nav>{{end}}

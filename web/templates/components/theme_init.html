@@ -1,0 +1,2 @@
+{{/* theme_init: define .dark/.light no <html> antes da primeira pintura (sem flash), a partir da escolha salva ou do sistema. */}}
+{{define "theme_init"}}<script>!function(){try{var t=localStorage.getItem("theme"),d=t?t==="dark":matchMedia("(prefers-color-scheme: dark)").matches;document.documentElement.classList.add(d?"dark":"light")}catch(e){}}()</script>{{end}}

@@ -1,5 +1,8 @@
 {{define "public"}}<!doctype html>
 <html lang="pt-BR">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="/static/css/app.dev.css">{{template "head" .}}</head>
-<body>{{template "content" .}}{{template "privacy_notice" .}}</body>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">{{template "theme_init"}}<link rel="stylesheet" href="{{asset "app.css"}}">{{template "head" .}}</head>
+<body>
+<div class="public-page">{{template "content" .}}</div>
+{{template "privacy_notice" .}}
+</body>
 </html>{{end}}

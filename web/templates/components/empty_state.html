@@ -1,1 +1,2 @@
-{{define "empty_state"}}<p class="empty-state">{{.}}</p>{{end}}
+{{/* empty_state: Text, Icon, ActionHref + ActionLabel */}}
+{{define "empty_state"}}<div class="card empty">{{if .Icon}}{{icon .Icon}}{{end}}<p>{{.Text}}</p>{{if .ActionHref}}<a class="btn btn-primary" href="{{.ActionHref}}">{{.ActionLabel}}</a>{{end}}</div>{{end}}

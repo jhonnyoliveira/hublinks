@@ -36,5 +36,5 @@ go.work.sum
 node_modules/
 bin/
 deploy/.env
-web/static/css/app.*.css
+web/static/css/app.[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f].css
 web/static/manifest.json

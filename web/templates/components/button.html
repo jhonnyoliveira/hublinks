@@ -1,1 +1,2 @@
-{{define "button"}}<button type="{{if .Type}}{{.Type}}{{else}}button{{end}}"{{if .Class}} class="{{.Class}}"{{end}}>{{.Label}}</button>{{end}}
+{{/* button: Label, Type (button|submit), Variant (primary|danger|ghost), Icon, Small, Disabled, AriaLabel (obrigatório sem Label) */}}
+{{define "button"}}<button type="{{if .Type}}{{.Type}}{{else}}button{{end}}" class="btn{{if .Variant}} btn-{{.Variant}}{{end}}{{if .Small}} btn-sm{{end}}{{if not .Label}} btn-icon{{end}}"{{if not .Label}} aria-label="{{.AriaLabel}}"{{end}}{{if .Disabled}} disabled{{end}}>{{if .Icon}}{{icon .Icon}}{{end}}{{if .Label}}<span>{{.Label}}</span>{{end}}</button>{{end}}

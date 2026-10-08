@@ -1,12 +1,12 @@
 {{define "head"}}<title>Links | Hub Links</title>{{end}}
 {{define "content"}}
-<div class="page-head"><h1>Links</h1>{{if .Marketplaces}}<a class="btn btn-primary" href="/admin/links/new">Novo link</a>{{end}}</div>
+<div class="page-head"><h1>Links</h1>{{if .Marketplaces}}<a class="btn btn-primary" href="/admin/links/new">{{icon "plus"}} Novo link</a>{{end}}</div>
 {{if not .Marketplaces}}<p class="alert" role="status">Crie um <a href="/admin/marketplaces">marketplace</a> antes de cadastrar links.</p>{{end}}
 <form class="toolbar" role="search" hx-get="/admin/links" hx-target="#links-list" hx-swap="outerHTML" hx-trigger="input changed delay:300ms from:#q, change, search, submit" hx-push-url="true">
   <div class="field"><label for="q">Buscar por título</label><input id="q" name="q" type="search" value="{{.Q}}" autocomplete="off"></div>
   <div class="field"><label for="f-marketplace">Marketplace</label><select id="f-marketplace" name="marketplace_id"><option value="">Todos</option>{{range .Marketplaces}}<option value="{{.ID}}"{{if eq (printf "%s" .ID) $.MarketplaceID}} selected{{end}}>{{.Name}}</option>{{end}}</select></div>
   <div class="field"><label for="f-active">Situação</label><select id="f-active" name="active"><option value="">Todos</option><option value="true"{{if eq .Active "true"}} selected{{end}}>Ativos</option><option value="false"{{if eq .Active "false"}} selected{{end}}>Inativos</option></select></div>
-  <button class="btn">Filtrar</button>
+  <button class="btn">{{icon "search"}} Filtrar</button>
 </form>
 {{template "links_list" .}}
 {{end}}

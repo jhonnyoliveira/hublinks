@@ -2,10 +2,7 @@
 (function () {
   "use strict";
 
-  document.addEventListener("htmx:configRequest", function (event) {
-    var meta = document.querySelector('meta[name="csrf-token"]');
-    if (meta) event.detail.headers["X-CSRF-Token"] = meta.content;
-  });
+  // O token CSRF vai em hx-headers no <body> (layouts/admin.html).
 
   function dialog() { return document.getElementById("modal"); }
 
@@ -24,8 +21,10 @@
       if (d && d.open) d.close();
     }
   });
+  // "close" é assíncrono: se o modal já foi reaberto, não apaga o conteúdo novo.
   document.addEventListener("close", function (event) {
-    if (event.target && event.target.id === "modal") document.getElementById("modal-body").innerHTML = "";
+    var d = event.target;
+    if (d && d.id === "modal" && !d.open) document.getElementById("modal-body").innerHTML = "";
   }, true);
 
   document.addEventListener("alpine:init", function () {
@@ -64,6 +63,31 @@
       };
     });
   });
+
+  // Tema: a classe .dark/.light no <html> é definida antes da pintura (theme_init);
+  // aqui só alternamos e lembramos a escolha. Sem escolha salva, seguimos o sistema.
+  function isDark() { return document.documentElement.classList.contains("dark"); }
+  function syncThemeButtons() {
+    document.querySelectorAll("[data-theme-toggle]").forEach(function (b) { b.setAttribute("aria-pressed", String(isDark())); });
+  }
+  function setTheme(dark, persist) {
+    var c = document.documentElement.classList;
+    c.toggle("dark", dark);
+    c.toggle("light", !dark);
+    if (persist) { try { localStorage.setItem("theme", dark ? "dark" : "light"); } catch (e) { /* sem armazenamento: vale só nesta página */ } }
+    syncThemeButtons();
+  }
+  document.addEventListener("click", function (event) {
+    if (event.target.closest("[data-theme-toggle]")) setTheme(!isDark(), true);
+  });
+  if (window.matchMedia) {
+    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function (event) {
+      var saved = null;
+      try { saved = localStorage.getItem("theme"); } catch (e) { /* ignora */ }
+      if (!saved) setTheme(event.matches, false);
+    });
+  }
+  document.addEventListener("DOMContentLoaded", syncThemeButtons);
 
   // Marca o item de navegação da página atual.
   document.addEventListener("DOMContentLoaded", function () {
