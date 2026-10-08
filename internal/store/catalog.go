@@ -152,3 +152,105 @@ func (c *Catalog) ListLinks(ctx context.Context, orgID uuid.UUID) ([]domain.Affi
 	}
 	return items, rows.Err()
 }
+
+func (c *Catalog) SoftDeleteMarketplace(ctx context.Context, orgID, id uuid.UUID) error {
+	var links int
+	if err := c.Pool.QueryRow(ctx, "SELECT count(*) FROM affiliate_links WHERE org_id=$1 AND marketplace_id=$2 AND deleted_at IS NULL AND purged_at IS NULL", orgID, id).Scan(&links); err != nil {
+		return err
+	}
+	if links > 0 {
+		return domain.ErrConflict
+	}
+	tag, err := c.Pool.Exec(ctx, "UPDATE marketplaces SET deleted_at=$3,updated_at=$3 WHERE id=$1 AND org_id=$2 AND deleted_at IS NULL AND purged_at IS NULL", id, orgID, time.Now().UTC())
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return domain.ErrNotFound
+	}
+	return nil
+}
+func (c *Catalog) SoftDeleteChannel(ctx context.Context, orgID, id uuid.UUID) error {
+	tag, err := c.Pool.Exec(ctx, "UPDATE channels SET deleted_at=$3,updated_at=$3 WHERE id=$1 AND org_id=$2 AND deleted_at IS NULL AND purged_at IS NULL", id, orgID, time.Now().UTC())
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return domain.ErrNotFound
+	}
+	return nil
+}
+func (c *Catalog) SoftDeleteLink(ctx context.Context, orgID, id uuid.UUID) error {
+	tag, err := c.Pool.Exec(ctx, "UPDATE affiliate_links SET deleted_at=$3,updated_at=$3 WHERE id=$1 AND org_id=$2 AND deleted_at IS NULL AND purged_at IS NULL", id, orgID, time.Now().UTC())
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return domain.ErrNotFound
+	}
+	return nil
+}
+
+func (c *Catalog) RestoreMarketplace(ctx context.Context, orgID, id uuid.UUID) error {
+	tag, err := c.Pool.Exec(ctx, "UPDATE marketplaces SET deleted_at=NULL,updated_at=$3 WHERE id=$1 AND org_id=$2 AND deleted_at IS NOT NULL AND purged_at IS NULL", id, orgID, time.Now().UTC())
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return domain.ErrNotFound
+	}
+	return nil
+}
+func (c *Catalog) RestoreChannel(ctx context.Context, orgID, id uuid.UUID) error {
+	tag, err := c.Pool.Exec(ctx, "UPDATE channels SET deleted_at=NULL,updated_at=$3 WHERE id=$1 AND org_id=$2 AND deleted_at IS NOT NULL AND purged_at IS NULL", id, orgID, time.Now().UTC())
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return domain.ErrNotFound
+	}
+	return nil
+}
+func (c *Catalog) RestoreLink(ctx context.Context, orgID, id uuid.UUID) error {
+	tag, err := c.Pool.Exec(ctx, `UPDATE affiliate_links l SET deleted_at=NULL,updated_at=$3 FROM marketplaces m WHERE l.id=$1 AND l.org_id=$2 AND l.marketplace_id=m.id AND m.org_id=$2 AND m.deleted_at IS NULL AND m.purged_at IS NULL AND l.deleted_at IS NOT NULL AND l.purged_at IS NULL`, id, orgID, time.Now().UTC())
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return domain.ErrNotFound
+	}
+	return nil
+}
+
+func (c *Catalog) UpdateMarketplace(ctx context.Context, orgID, id uuid.UUID, name *string, policy *domain.Policy) error {
+	if name != nil && !domain.Text(*name, 1, 80) {
+		return domain.ValidationError{Fields: map[string]string{"name": "nome inválido"}}
+	}
+	if policy != nil && !domain.PolicyValid(*policy) {
+		return domain.ValidationError{Fields: map[string]string{"shorten_policy": "política inválida"}}
+	}
+	tag, err := c.Pool.Exec(ctx, "UPDATE marketplaces SET name=COALESCE($3,name),shorten_policy=COALESCE($4,shorten_policy),updated_at=$5 WHERE id=$1 AND org_id=$2 AND deleted_at IS NULL AND purged_at IS NULL", id, orgID, name, policy, time.Now().UTC())
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return domain.ErrNotFound
+	}
+	return nil
+}
+func (c *Catalog) UpdateChannel(ctx context.Context, orgID, id uuid.UUID, name, segment *string) error {
+	if name != nil && !domain.Text(*name, 1, 60) {
+		return domain.ValidationError{Fields: map[string]string{"name": "nome inválido"}}
+	}
+	if segment != nil && !domain.Segment(*segment) {
+		return domain.ValidationError{Fields: map[string]string{"segment": "segmento inválido"}}
+	}
+	tag, err := c.Pool.Exec(ctx, "UPDATE channels SET name=COALESCE($3,name),segment=COALESCE($4,segment),updated_at=$5 WHERE id=$1 AND org_id=$2 AND deleted_at IS NULL AND purged_at IS NULL", id, orgID, name, segment, time.Now().UTC())
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return domain.ErrNotFound
+	}
+	return nil
+}
