@@ -1,0 +1,10 @@
+.git/
+.devcontainer/
+node_modules/
+bin/
+coverage/
+*.log
+.env*
+deploy/.env
+web/static/css/app.*.css
+web/static/manifest.json

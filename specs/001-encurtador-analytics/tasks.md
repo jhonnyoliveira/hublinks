@@ -39,13 +39,13 @@ com um checkpoint verificável.
 
 **Purpose**: inicialização do módulo e das ferramentas
 
-- [ ] T001 Criar o módulo Go `github.com/hublinks/hublinks` com `go 1.27` em `go.mod`, e o
+- [X] T001 Criar o módulo Go `github.com/hublinks/hublinks` com `go 1.27` em `go.mod`, e o
   `cmd/hublinks/main.go` com despacho de subcomandos `serve` (padrão), `migrate` e
   `maintenance` (esses dois respondem "não implementado" até as fases correspondentes).
-- [ ] T002 Adicionar as dependências em `go.mod`/`go.sum`: `github.com/jackc/pgx/v5`,
+- [X] T002 Adicionar as dependências em `go.mod`/`go.sum`: `github.com/jackc/pgx/v5`,
   `github.com/pressly/goose/v3`, `github.com/google/uuid`, `golang.org/x/crypto`,
   `golang.org/x/time` e `github.com/prometheus/client_golang`.
-- [ ] T003 [P] Criar o `Makefile` com os alvos `run`, `test`
+- [X] T003 [P] Criar o `Makefile` com os alvos `run`, `test`
   (`go test ./...`), `test-race`, `test-ci` (`go test -v ./...` e falha se houver
   `--- SKIP`), `lint` (`gofmt -l . && go vet ./...`) e `css` (binário
   standalone do Tailwind v4 com versão fixada em `TAILWIND_VERSION`, baixado em `bin/`).
@@ -54,7 +54,7 @@ com um checkpoint verificável.
   `export TEST_DATABASE_URL`, para que os alvos de teste funcionem no devcontainer sem passo
   manual e o CI possa sobrescrever pelo ambiente. A variável também está definida no serviço
   `dev` do `docker-compose.yml` da raiz.
-- [ ] T004 [P] Atualizar o `.gitignore` com `bin/`, `deploy/.env`, `web/static/css/app.*.css` e
+- [X] T004 [P] Atualizar o `.gitignore` com `bin/`, `deploy/.env`, `web/static/css/app.*.css` e
   `web/static/manifest.json`, preservando as entradas existentes.
 
 ---
@@ -75,15 +75,15 @@ Corresponde ao épico 1 e às bases do épico 2.
   - aplica todos os padrões de `contracts/config.md`;
   - faz o parse de durações (`BOT_WINDOW`, `LOGIN_WINDOW`), de `REPORT_TZ` via
     `time.LoadLocation` e de `TRUSTED_PROXIES` como lista de CIDRs.
-- [ ] T006 Implementar `internal/config/config.go` (struct `Config` e `Load(getenv)`) com todas as
+- [X] T006 Implementar `internal/config/config.go` (struct `Config` e `Load(getenv)`) com todas as
   variáveis e padrões de `specs/001-encurtador-analytics/contracts/config.md`. Nenhum segredo vai
   para o `String()`.
-- [ ] T007 Implementar `internal/store/db.go`: `Open(ctx, url)` com `pgxpool` (`TimeZone=UTC`
+- [X] T007 Implementar `internal/store/db.go`: `Open(ctx, url)` com `pgxpool` (`TimeZone=UTC`
   na conexão) e `Ping` com timeout de 1 s.
-- [ ] T008 Implementar `internal/store/migrate.go`: migrações goose embutidas (`//go:embed` de
+- [X] T008 Implementar `internal/store/migrate.go`: migrações goose embutidas (`//go:embed` de
   `migrations/*.sql`, com o diretório `migrations/` na raiz exposto pelo pacote
   `migrations/embed.go`), mais `Up(ctx, pool)` e `Status`.
-- [ ] T009 Criar a migração `migrations/00001_core.sql` com:
+- [X] T009 Criar a migração `migrations/00001_core.sql` com:
   - `organizations(id uuid PK, name text NOT NULL, slug text UNIQUE NOT NULL, created_at)`;
   - `users(id uuid PK, email text UNIQUE NOT NULL CHECK (email = lower(email)), password_hash
     text NOT NULL, created_at, deleted_at)`;
@@ -96,7 +96,7 @@ Corresponde ao épico 1 e às bases do épico 2.
   `hl_test_<aleatório>`, aplica as migrações, devolve o pool e remove o banco em `t.Cleanup`.
 - [ ] T011 Escrever teste de integração em `internal/store/migrate_test.go`: aplica as migrações
   do zero, verifica que reaplicar não muda nada e que as tabelas de T009 existem.
-- [ ] T012 Implementar `hublinks migrate [up|status]` em `cmd/hublinks/migrate.go`.
+- [X] T012 Implementar `hublinks migrate [up|status]` em `cmd/hublinks/migrate.go`.
 
 ### Bootstrap, saúde e HTTP base
 
@@ -106,8 +106,8 @@ Corresponde ao épico 1 e às bases do épico 2.
     `admin`;
   - não altera nada quando já existem usuários;
   - rejeita senha com menos de 12 caracteres.
-- [ ] T014 Implementar `internal/store/bootstrap.go`, usando o hash de T018.
-- [ ] T015 [P] Implementar `internal/httpx/clientip.go`:
+- [X] T014 Implementar `internal/store/bootstrap.go`, usando o hash de T018.
+- [X] T015 [P] Implementar `internal/httpx/clientip.go`:
   - `ClientIP(r, trusted []netip.Prefix)` percorre `X-Forwarded-For` da direita para a esquerda
     só quando o par da conexão está em `TRUSTED_PROXIES`;
   - `Normalize(ip)` mantém o IPv4 completo e reduz IPv6 a `/64`;
@@ -117,9 +117,9 @@ Corresponde ao épico 1 e às bases do épico 2.
 - [ ] T017 [P] Implementar `internal/httpx/log.go`: middleware `slog` JSON que registra método,
   rota, status e duração, mas nunca `RemoteAddr`, XFF ou query string. Teste em
   `internal/httpx/log_test.go`: nenhum IP aparece na saída.
-- [ ] T018 [P] Implementar `internal/auth/password.go` (argon2id m=64 MiB, t=3, p=2, formato PHC;
+- [X] T018 [P] Implementar `internal/auth/password.go` (argon2id m=64 MiB, t=3, p=2, formato PHC;
   `Hash` e `Verify` com comparação em tempo constante) e o teste `internal/auth/password_test.go`.
-- [ ] T019 Implementar `internal/httpx/health.go` (`GET /healthz` → `200 {"status":"ok"}` ou
+- [X] T019 Implementar `internal/httpx/health.go` (`GET /healthz` → `200 {"status":"ok"}` ou
   `503 {"status":"unavailable","checks":{"database":"error"}}`, sem limite de taxa) e o teste
   `internal/httpx/health_test.go`.
 - [ ] T020 Implementar `internal/server/server.go`:
@@ -241,7 +241,7 @@ acessá-la. Deve redirecionar `302` ao destino; código ou canal inexistente →
 
 ### Implementation for User Story 1
 
-- [ ] T039 [US1] Criar a migração `migrations/00002_catalog.sql`:
+- [X] T039 [US1] Criar a migração `migrations/00002_catalog.sql`:
   - `marketplaces(id, org_id FK, name text NOT NULL, shorten_policy text CHECK IN
     ('shorten','direct'), created_at, updated_at, deleted_at, purged_at)`, com índice único
     `(org_id, lower(name)) WHERE purged_at IS NULL`;
@@ -254,11 +254,11 @@ acessá-la. Deve redirecionar `302` ao destino; código ou canal inexistente →
   - `short_codes(code char(7) PK CHECK (code ~ '^[0-9a-z]{7}$'), org_id FK, target_type text
     CHECK (target_type = 'affiliate_link'), target_id uuid, created_at)`, com índice único
     `(target_type, target_id)`.
-- [ ] T040 [P] [US1] Implementar `internal/domain/catalog.go`: entidades `Marketplace`,
+- [X] T040 [P] [US1] Implementar `internal/domain/catalog.go`: entidades `Marketplace`,
   `Channel`, `AffiliateLink` e `Policy`, `EffectivePolicy()` e `Trackable()`.
-- [ ] T041 [P] [US1] Implementar `internal/domain/validate.go` com as regras de T033 e as
+- [X] T041 [P] [US1] Implementar `internal/domain/validate.go` com as regras de T033 e as
   mensagens em pt-BR.
-- [ ] T042 [P] [US1] Implementar `internal/domain/code.go`: `NewCode()` com `crypto/rand`,
+- [X] T042 [P] [US1] Implementar `internal/domain/code.go`: `NewCode()` com `crypto/rand`,
   alfabeto `[0-9a-z]`, 7 caracteres, descartando palavras reservadas.
 - [ ] T043 [US1] Implementar os repositórios em `internal/store/marketplaces.go`,
   `internal/store/channels.go`, `internal/store/links.go` e `internal/store/codes.go`:
@@ -271,7 +271,7 @@ acessá-la. Deve redirecionar `302` ao destino; código ou canal inexistente →
 - [ ] T045 [US1] Implementar os handlers da API em `internal/api/marketplaces.go`,
   `internal/api/channels.go` e `internal/api/links.go`, conforme `contracts/api-v1.md`, sob
   `RequireSession` + `RequireCSRF`.
-- [ ] T046 [US1] Implementar `internal/redirect/cache.go`:
+- [X] T046 [US1] Implementar `internal/redirect/cache.go`:
   - mapas `code → Resolved{OrgID, TargetType, TargetID, Destination, Policy, Active}` e
     `(orgID, segment) → channelID`, sob `sync.RWMutex`;
   - TTL de 5 min, cache negativo de 30 s, `Invalidate(code)` e `InvalidateAll()`;
@@ -357,7 +357,7 @@ em `/api/v1/stats/*`.
 
 ### Implementation for User Story 2
 
-- [ ] T059 [US2] Criar a migração `migrations/00003_events.sql`:
+- [X] T059 [US2] Criar a migração `migrations/00003_events.sql`:
   - `click_events` com as colunas de `data-model.md` (`visitor_id bytea` com
     `CHECK (octet_length(visitor_id)=32)`, `event_type CHECK IN ('click')`, `referer` e
     `user_agent` text), índices `(org_id, occurred_at)` e `(target_id, occurred_at)`, sem FKs;
@@ -367,18 +367,18 @@ em `/api/v1/stats/*`.
   - `click_daily` com `PK(org_id, day, event_type, target_type, target_id, channel_id)` e
     contadores `integer NOT NULL DEFAULT 0`;
   - `aggregated_days(org_id, day, aggregated_at, PK(org_id, day))`.
-- [ ] T060 [P] [US2] Implementar `internal/events/visitor.go`:
+- [X] T060 [P] [US2] Implementar `internal/events/visitor.go`:
   `VisitorID = HMAC-SHA256(PEPPER, ip_norm + "|" + ua)`, usando `httpx.Normalize`.
 - [ ] T061 [P] [US2] Implementar `internal/metrics/metrics.go` com o registro Prometheus e os
   contadores e histogramas de R15: `hublinks_events_enqueued_total`,
   `hublinks_events_dropped_total`, `hublinks_events_written_total`,
   `hublinks_events_write_errors_total` e `hublinks_event_queue_length`.
-- [ ] T062 [US2] Implementar `internal/events/queue.go`:
+- [X] T062 [US2] Implementar `internal/events/queue.go`:
   - canal com buffer `EVENT_QUEUE_SIZE` e `Enqueue` não bloqueante (`select … default`);
   - worker com lote de `EVENT_BATCH_SIZE`/`EVENT_FLUSH_INTERVAL`, 3 tentativas por lote,
     `recover` com reinício;
   - drenagem no shutdown com prazo.
-- [ ] T063 [US2] Implementar `internal/events/writer.go`: para cada evento real, em transação,
+- [X] T063 [US2] Implementar `internal/events/writer.go`: para cada evento real, em transação,
   `INSERT INTO visitor_seen … ON CONFLICT DO NOTHING RETURNING`, uma vez com `scope='url'`
   (canal ou o UUID nulo) e outra com `scope='target'` (UUID nulo), define as flags e grava o lote
   com `CopyFrom` em `click_events`. Robôs gravam direto, sem `visitor_seen`.
@@ -444,7 +444,7 @@ não mudam; 5 códigos distintos em 10 s pelo mesmo IP → o 5º é `is_bot`.
 
 ### Implementation for User Story 3
 
-- [ ] T073 [P] [US3] Implementar `internal/redirect/bots.go`: `IsCrawler(ua)` com a lista de R9
+- [X] T073 [P] [US3] Implementar `internal/redirect/bots.go`: `IsCrawler(ua)` com a lista de R9
   e o detector de automação (janela deslizante em memória por chave `httpx.Key`, com limpeza
   periódica de entradas expiradas).
 - [ ] T074 [US3] Integrar no `internal/redirect/handler.go`: crawler → prévia sem evento;
@@ -607,22 +607,22 @@ contagens (idênticas); reexecutar (sem mudança); um link na lixeira há 31 dia
 
 ### Implementation for User Story 7
 
-- [ ] T100 [P] [US7] Criar o `deploy/Dockerfile` multi-stage:
+- [X] T100 [P] [US7] Criar o `deploy/Dockerfile` multi-stage:
   1. estágio `css`: baixa o Tailwind standalone pela versão do `ARG` e roda
      `scripts/build-css.sh`;
   2. estágio `build`: `golang:1.27`, `CGO_ENABLED=0`, `-trimpath -ldflags "-s -w"`;
   3. estágio final: `gcr.io/distroless/static-debian12:nonroot`, `EXPOSE 8080`,
      `ENTRYPOINT ["/hublinks"]`, `CMD ["serve"]`.
   Criar também o `.dockerignore` na raiz.
-- [ ] T101 [P] [US7] Criar o `deploy/docker-compose.yml`:
+- [X] T101 [P] [US7] Criar o `deploy/docker-compose.yml`:
   - serviço `app` (build `deploy/Dockerfile`, contexto `..`, `env_file: .env`, porta `8080`,
     `depends_on` de `db` saudável);
   - serviço `db` (`postgres:16-alpine` com volume e healthcheck `pg_isready`);
   - sem publicar `9091`.
   Não alterar o `docker-compose.yml` nem o `Dockerfile.dev` da raiz.
-- [ ] T102 [P] [US7] Criar o `deploy/.env.example` apenas com valores fictícios para todas as
+- [X] T102 [P] [US7] Criar o `deploy/.env.example` apenas com valores fictícios para todas as
   variáveis de `contracts/config.md`, com comentário de que `PEPPER` nunca deve ser rotacionado.
-- [ ] T103 [US7] Escrever o `README.md` na raiz: requisitos, desenvolvimento no devcontainer
+- [X] T103 [US7] Escrever o `README.md` na raiz: requisitos, desenvolvimento no devcontainer
   (`make css`, `make run`, `make test` com `TEST_DATABASE_URL`), deploy pelo compose e a tabela
   de variáveis (link para `specs/001-encurtador-analytics/contracts/config.md`).
 - [ ] T104 [US7] Validar o build da imagem e a subida pelo compose, conforme o passo 2 do

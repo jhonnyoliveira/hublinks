@@ -1,0 +1,8 @@
+-- +goose Up
+CREATE TABLE click_events (id uuid PRIMARY KEY, occurred_at timestamptz NOT NULL, org_id uuid NOT NULL, event_type text NOT NULL CHECK(event_type='click'), code char(7) NOT NULL, target_type text NOT NULL CHECK(target_type='affiliate_link'), target_id uuid NOT NULL, channel_id uuid, visitor_id bytea NOT NULL CHECK(octet_length(visitor_id)=32), is_unique_url boolean NOT NULL DEFAULT false, is_unique_target boolean NOT NULL DEFAULT false, is_bot boolean NOT NULL DEFAULT false, referer text NOT NULL DEFAULT '', user_agent text NOT NULL DEFAULT '');
+CREATE INDEX click_events_org_occurred ON click_events(org_id,occurred_at); CREATE INDEX click_events_target_occurred ON click_events(target_id,occurred_at);
+CREATE TABLE visitor_seen (target_type text NOT NULL, target_id uuid NOT NULL, scope text NOT NULL CHECK(scope IN ('url','target')), channel_id uuid NOT NULL, visitor_id bytea NOT NULL, org_id uuid NOT NULL, first_seen_at timestamptz NOT NULL, PRIMARY KEY(target_type,target_id,scope,channel_id,visitor_id));
+CREATE TABLE click_daily (org_id uuid NOT NULL, day date NOT NULL, event_type text NOT NULL CHECK(event_type='click'), target_type text NOT NULL CHECK(target_type='affiliate_link'), target_id uuid NOT NULL, channel_id uuid NOT NULL, clicks integer NOT NULL DEFAULT 0, unique_url integer NOT NULL DEFAULT 0, unique_target integer NOT NULL DEFAULT 0, PRIMARY KEY(org_id,day,event_type,target_type,target_id,channel_id));
+CREATE TABLE aggregated_days (org_id uuid NOT NULL, day date NOT NULL, aggregated_at timestamptz NOT NULL, PRIMARY KEY(org_id,day));
+-- +goose Down
+DROP TABLE aggregated_days; DROP TABLE click_daily; DROP TABLE visitor_seen; DROP TABLE click_events;

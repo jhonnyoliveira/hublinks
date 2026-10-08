@@ -1,0 +1,97 @@
+package store
+
+import (
+	"context"
+	"errors"
+	"github.com/google/uuid"
+	"github.com/hublinks/hublinks/internal/domain"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"time"
+)
+
+type Catalog struct{ Pool *pgxpool.Pool }
+
+func NewCatalog(p *pgxpool.Pool) *Catalog { return &Catalog{p} }
+func (c *Catalog) Resolve(ctx context.Context, code string) (domain.AffiliateLink, error) {
+	const q = `SELECT l.id,l.org_id,l.marketplace_id,l.title,l.image_url,l.destination_url,l.shorten_policy_override,l.active,l.created_at,l.updated_at,l.deleted_at,l.purged_at,m.id,m.org_id,m.name,m.shorten_policy,m.created_at,m.updated_at,m.deleted_at,m.purged_at FROM short_codes s JOIN affiliate_links l ON l.id=s.target_id JOIN marketplaces m ON m.id=l.marketplace_id WHERE s.code=$1`
+	var l domain.AffiliateLink
+	var override *string
+	var mp domain.Marketplace
+	err := c.Pool.QueryRow(ctx, q, code).Scan(&l.ID, &l.OrgID, &l.MarketplaceID, &l.Title, &l.ImageURL, &l.DestinationURL, &override, &l.Active, &l.CreatedAt, &l.UpdatedAt, &l.DeletedAt, &l.PurgedAt, &mp.ID, &mp.OrgID, &mp.Name, &mp.ShortenPolicy, &mp.CreatedAt, &mp.UpdatedAt, &mp.DeletedAt, &mp.PurgedAt)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return l, domain.ErrNotFound
+	}
+	if err != nil {
+		return l, err
+	}
+	if override != nil {
+		x := domain.Policy(*override)
+		l.ShortenPolicyOverride = &x
+	}
+	l.Code = code
+	l.Marketplace = mp
+	if !l.Active || l.DeletedAt != nil || l.PurgedAt != nil || mp.DeletedAt != nil || mp.PurgedAt != nil {
+		return l, domain.ErrNotFound
+	}
+	return l, nil
+}
+func (c *Catalog) Channel(ctx context.Context, orgID uuid.UUID, segment string) (uuid.UUID, error) {
+	var id uuid.UUID
+	err := c.Pool.QueryRow(ctx, "SELECT id FROM channels WHERE org_id=$1 AND segment=$2 AND deleted_at IS NULL AND purged_at IS NULL", orgID, segment).Scan(&id)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return id, domain.ErrNotFound
+	}
+	return id, err
+}
+func (c *Catalog) CreateMarketplace(ctx context.Context, orgID uuid.UUID, name string, p domain.Policy) (domain.Marketplace, error) {
+	if !domain.Text(name, 1, 80) || !domain.PolicyValid(p) {
+		return domain.Marketplace{}, domain.ValidationError{Fields: map[string]string{"name": "dados inválidos"}}
+	}
+	id, _ := uuid.NewV7()
+	now := time.Now().UTC()
+	_, err := c.Pool.Exec(ctx, "INSERT INTO marketplaces(id,org_id,name,shorten_policy,created_at,updated_at) VALUES($1,$2,$3,$4,$5,$5)", id, orgID, name, p, now)
+	return domain.Marketplace{ID: id, OrgID: orgID, Name: name, ShortenPolicy: p, CreatedAt: now, UpdatedAt: now}, err
+}
+func (c *Catalog) CreateChannel(ctx context.Context, orgID uuid.UUID, name, segment string) (domain.Channel, error) {
+	if !domain.Text(name, 1, 60) || !domain.Segment(segment) {
+		return domain.Channel{}, domain.ValidationError{Fields: map[string]string{"segment": "segmento inválido"}}
+	}
+	id, _ := uuid.NewV7()
+	now := time.Now().UTC()
+	_, err := c.Pool.Exec(ctx, "INSERT INTO channels(id,org_id,name,segment,created_at,updated_at) VALUES($1,$2,$3,$4,$5,$5)", id, orgID, name, segment, now)
+	return domain.Channel{ID: id, OrgID: orgID, Name: name, Segment: segment, CreatedAt: now, UpdatedAt: now}, err
+}
+func (c *Catalog) CreateLink(ctx context.Context, l domain.AffiliateLink) (domain.AffiliateLink, error) {
+	if !domain.Text(l.Title, 1, 200) || !domain.URL(l.DestinationURL) {
+		return l, domain.ValidationError{Fields: map[string]string{"destination_url": "URL deve usar http ou https"}}
+	}
+	tx, err := c.Pool.Begin(ctx)
+	if err != nil {
+		return l, err
+	}
+	defer tx.Rollback(ctx)
+	var mp domain.Marketplace
+	if err = tx.QueryRow(ctx, "SELECT id,org_id,name,shorten_policy,created_at,updated_at,deleted_at,purged_at FROM marketplaces WHERE id=$1 AND org_id=$2 AND deleted_at IS NULL AND purged_at IS NULL", l.MarketplaceID, l.OrgID).Scan(&mp.ID, &mp.OrgID, &mp.Name, &mp.ShortenPolicy, &mp.CreatedAt, &mp.UpdatedAt, &mp.DeletedAt, &mp.PurgedAt); err != nil {
+		return l, domain.ErrNotFound
+	}
+	l.ID, _ = uuid.NewV7()
+	now := time.Now().UTC()
+	l.CreatedAt, l.UpdatedAt, l.Marketplace = now, now, mp
+	for n := 0; n < 5; n++ {
+		l.Code, err = domain.NewCode()
+		if err != nil {
+			return l, err
+		}
+		_, err = tx.Exec(ctx, "INSERT INTO affiliate_links(id,org_id,marketplace_id,title,image_url,destination_url,shorten_policy_override,active,created_at,updated_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$9)", l.ID, l.OrgID, l.MarketplaceID, l.Title, l.ImageURL, l.DestinationURL, l.ShortenPolicyOverride, l.Active, now)
+		if err != nil {
+			return l, err
+		}
+		_, err = tx.Exec(ctx, "INSERT INTO short_codes(code,org_id,target_type,target_id,created_at) VALUES($1,$2,'affiliate_link',$3,$4)", l.Code, l.OrgID, l.ID, now)
+		if err == nil {
+			break
+		}
+		return l, err
+	}
+	return l, tx.Commit(ctx)
+}

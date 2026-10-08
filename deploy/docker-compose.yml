@@ -1,0 +1,26 @@
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    env_file: .env
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: hublinks
+      POSTGRES_USER: hublinks
+      POSTGRES_PASSWORD: hublinks
+    volumes:
+      - hublinks-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hublinks -d hublinks"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+volumes:
+  hublinks-postgres:

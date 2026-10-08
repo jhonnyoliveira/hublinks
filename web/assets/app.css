@@ -1,0 +1,4 @@
+@import "tailwindcss";
+@theme { --color-brand: #2563eb; --color-surface: #ffffff; --color-ink: #172033; --radius-card: .75rem; }
+@media (prefers-color-scheme: dark) { :root { --color-surface:#111827; --color-ink:#f8fafc; } }
+* { box-sizing: border-box; } body { margin:0; color:var(--color-ink); background:var(--color-surface); font-family:Arial,sans-serif; } :focus-visible { outline:3px solid #f59e0b; outline-offset:2px; }
