@@ -9,9 +9,9 @@
 
 ## Momento atual e próximo trabalho
 
-O repositório contém a especificação e infraestrutura de desenvolvimento, mas ainda não tem aplicação Go. O `package.json` é um arquivo inicial genérico; seu script de teste não valida o projeto e não define a stack.
+O repositório já contém a aplicação Go, a fundação de configuração, banco, migrações, saúde, autenticação, renderização por `html/template`, catálogo e redirecionamento. O `package.json` continua genérico e não define a stack de testes.
 
-O próximo épico é **1 — Fundação**: estrutura Go, configuração por variáveis de ambiente, conexão PostgreSQL, migrações versionadas, `GET /healthz`, imagem Docker da aplicação e compose com app e banco. Não considere esse épico implementado apenas pela existência do ambiente de desenvolvimento.
+O trabalho em andamento é a **User Story 1 — Cadastrar link e divulgar por canal**. T033–T036 estão concluídas. A T037 tem cobertura HTTP para operações principais, mas ainda requer a revisão dos casos de erro/envelopes antes de ser marcada. Depois, concluir T038 e os critérios pendentes de T043–T052, marcando cada tarefa somente após cumprir integralmente sua descrição. Não avance para a User Story 2 antes do checkpoint da US1.
 
 - Implemente somente o trabalho solicitado, em incrementos entregáveis. Criar este arquivo não autoriza iniciar a aplicação.
 - Siga a sequência da seção 13 do escopo: fundação; modelo e CRUD; redirecionamento; eventos; bots e preview; estatísticas e retenção; painel; endurecimento.
