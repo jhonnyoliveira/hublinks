@@ -44,6 +44,10 @@ services:
     ports:
       - '3000:3000' # API, common default
       - '3333:3333' # API, alternative local default
+      # Hub Links (Go): `make run` / scripts/manual-run.sh escutam em :8080 e :9091 dentro
+      # do contêiner (HTTP_ADDR e METRICS_ADDR padrão); estas linhas os expõem no host.
+      - '8080:8080' # painel (http://localhost:8080/admin), redirecionamento e /healthz
+      - '9091:9091' # métricas Prometheus (/metrics); só para desenvolvimento
 
   postgres:
     image: timescale/timescaledb:2.16.1-pg16
