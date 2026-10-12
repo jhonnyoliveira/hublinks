@@ -51,7 +51,7 @@ marketplace, dois canais (`wapp`, `ig`) e dois links de afiliado, um `shorten` e
 
 ## 4. Página pública (História 2, SC-003, SC-010)
 
-Abra `/p/fone-bluetooth-x1` num celular ou no DevTools a 375 px, nos dois temas e só com o teclado:
+Primeiro, a parte automática: `make browser-check ARGS="--base http://localhost:8080 --path /p/fone-bluetooth-x1 --path /zzzzzzz=404"` (375 e 1280 px, claro e escuro; ver `docs/desenvolvimento.md`) deve terminar sem falhas. Depois, o olhar de uma pessoa: abra `/p/fone-bluetooth-x1` num celular ou no DevTools a 375 px, nos dois temas e só com o teclado:
 a ação "Ver onde comprar" aparece sem rolar; a barra fixa surge ao rolar; "Onde comprar" mostra
 os botões por marketplace com logotipo e sem preço; o link `direct` abre a URL original; o link
 `shorten` passa pelo redirecionamento (`302`). Desative o JavaScript: botões e acordeão funcionam.
