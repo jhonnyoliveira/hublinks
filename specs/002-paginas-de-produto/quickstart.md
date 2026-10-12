@@ -38,7 +38,7 @@ marketplace, dois canais (`wapp`, `ig`) e dois links de afiliado, um `shorten` e
 
 ## 3. Publicar um produto (História 1, SC-001)
 
-1. Em **Categorias**, crie "Fones". Em **Marketplaces**, envie um logotipo a um deles.
+1. *(Só depois da História 6; antes disso, pule este item e a categoria do item 2.)* Em **Categorias**, crie "Fones". Em **Marketplaces**, envie um logotipo a um deles.
 2. Em **Produtos → Novo**: título "Fone Bluetooth X1", aceite o slug sugerido (`fone-bluetooth-x1`),
    categoria, descrição curta e longa; envie a imagem de 1600 px; vincule os dois links.
 3. Abra a **pré-visualização** (deve mostrar "Rascunho") e publique.
@@ -82,10 +82,12 @@ mesmo user-agent repetido não cria novo único; trocar o user-agent cria. O lin
 ## 7. Compartilhamento e SEO (História 5)
 
 Cole `…/p/fone-bluetooth-x1` e `…/{código}` num validador de prévia (ou inspecione o HTML): título,
-imagem 1280 px, descrição e `og:url` canônico igual ao endereço amigável. O JSON-LD tem
+imagem (a maior variante gerada), descrição e `og:url` canônico igual ao endereço amigável. O JSON-LD tem
 `@type: Product` e **não** contém `offers`. Há um único `<h1>`.
 
 ## 8. Edição, cache e lixeira (SC-007)
+
+*(Vale a partir da História 2.)*
 
 ```bash
 E=$(curl -si localhost:8080/p/fone-bluetooth-x1 | grep -i '^etag' | cut -d' ' -f2)

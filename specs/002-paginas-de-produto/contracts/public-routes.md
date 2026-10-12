@@ -42,7 +42,7 @@ servidor e seja contada.
 - `<title>` e `meta description` (SEO do produto, com fallback para título e descrição curta).
 - `link rel="canonical"` = `BASE_URL/p/{slug}`, inclusive pelo código curto.
 - Open Graph: `og:type=product`, `og:title`, `og:description`, `og:url` (o canônico),
-  `og:image` (variante de 1280 px), `twitter:card=summary_large_image`.
+  `og:image` (a maior variante gerada da imagem principal, até 1280 px; omitido sem imagem), `twitter:card=summary_large_image`.
 - JSON-LD `schema.org/Product` com `name`, `description`, `image`, `category`; **sem** `offers`,
   preço, avaliação ou ranking.
 - Um único `<h1>`; seções com `<h2>` e grupos da ficha com `<h3>` dentro de `<details>`.

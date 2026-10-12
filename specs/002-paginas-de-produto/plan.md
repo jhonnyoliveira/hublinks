@@ -128,13 +128,13 @@ internal/
 ├── service/                      products.go, categories.go, media.go (invalida caches e versão)
 ├── events/                       Event.Kind/TargetType; writer e visitor_seen com event_type
 ├── redirect/                     alvo tipado no Cache e no Handler; Recorder para produto
-├── web/                          product.go (render, cache de páginas, ETag), beacon via api/
+├── web/                          product.go (render), pagecache.go (cache e ETag), media.go (rota /media)
 ├── api/                          products.go, categories.go, media.go, beacon.go, stats de produto
 ├── admin/                        products.go, categories.go, media.go; marketplaces (logotipo); lixeira; dashboard
 ├── stats/                        filtros de tipo nas consultas existentes; products.go
 ├── maintenance/                  purga de produtos/categorias, mídia órfã e arquivos
 ├── config/                       MEDIA_DIR, MEDIA_MAX_BYTES, PAGE_CACHE_MB
-└── server/                       novas rotas: /p/{slug}, /media/…, beacon, /admin/products…, /api/v1/…
+└── server/                       media_dir.go (PrepareMedia) e novas rotas: /p/{slug}, /media/…, beacon, /admin/products…, /api/v1/…
 web/
 ├── templates/
 │   ├── public/product.html       página pública
@@ -154,8 +154,10 @@ o beacon fica em `internal/api` por estar sob `/api/v1`.
 
 ## Ordem de entrega (épicos)
 
-Cada épico termina com testes passando e o trecho do quickstart correspondente. A numeração de tarefas
-sai do `/speckit-tasks`.
+Visão geral dos épicos. **A ordem de execução e as dependências são as das fases do `tasks.md`, que
+prevalece sobre esta lista**: Setup, Foundational, US1 (produtos), US2 (página pública), US3 (ficha e
+relacionados), US4 (visitas e cliques), US5 (SEO), US6 (categorias e logotipo) e Polish. Cada épico termina
+com testes passando e o trecho do quickstart correspondente.
 
 1. **Fundação de dados**: migração `00004`, domínio, repositórios, validações; correção dos filtros de
    tipo em `internal/stats` com testes de regressão; `visitor_seen.event_type`.

@@ -21,6 +21,7 @@ descartável fora do repositório.
   uma imagem de 640×480 em ~18 ms, com 2,9 KB contra 12,2 KB do JPEG equivalente (imagem
   sintética, só indicativa), e decodificou de volta. Atende o orçamento de desempenho do escopo
   (formatos modernos, `srcset`) sem ferramenta externa.
+- **Uso das variantes**: `srcset` e `og:image` usam só as larguras realmente geradas (`media.widths`); a maior delas é a imagem de compartilhamento. Uma origem estreita (ex.: 600 px) gera apenas as variantes até a largura dela.
 - **Limites**: arquivo ≤ 5 MiB (`MEDIA_MAX_BYTES`), no máximo 24 megapixels (lidos por
   `image.DecodeConfig` antes de decodificar, contra bombas de descompressão) e corpo limitado por
   `http.MaxBytesReader`. Tipo detectado pelo conteúdo (`http.DetectContentType`), nunca pela
