@@ -29,7 +29,7 @@ func UI(w http.ResponseWriter, r *http.Request) {
 		},
 		"Tabs":         map[string]any{"Label": "Seções de exemplo", "Items": []navItem{{"#um", "Resumo", true}, {"#dois", "Detalhes", false}}},
 		"Periods":      map[string]any{"Items": []navItem{{"?period=7d", "7 dias", false}, {"?period=30d", "30 dias", true}, {"?period=90d", "90 dias", false}}},
-		"PeriodCustom": periodView{From: "2026-10-01", To: "2026-10-07"},
+		"PeriodCustom": periodView{From: "2026-10-01", To: "2026-10-07", FromBR: "01/10/2026", ToBR: "07/10/2026"},
 		"Chart":        chartData(sampleDays),
 		"DayRows":      dayRows(sampleDays),
 	}

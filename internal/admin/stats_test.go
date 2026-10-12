@@ -50,8 +50,12 @@ func TestDashboardPeriodSelectionAndFragment(t *testing.T) {
 	mustNotContain(t, w, "<html")
 
 	w = e.do(t, e.dash.Show, req{target: "/admin?from=2026-01-01&to=2026-01-10"})
-	mustContain(t, w, "01/01/2026 a 10/01/2026", `name="from" value="2026-01-01"`)
+	mustContain(t, w, "01/01/2026 a 10/01/2026", `name="from" value="01/01/2026"`)
 	mustNotContain(t, w, `aria-current="true"`)
+
+	// Campos do painel enviam dd/mm/aaaa; o mesmo dia inicial e final vale um dia.
+	w = e.do(t, e.dash.Show, req{target: "/admin?from=05/01/2026&to=05/01/2026"})
+	mustContain(t, w, "05/01/2026 a 05/01/2026", `name="to" value="05/01/2026"`)
 
 	w = e.do(t, e.dash.Show, req{target: "/admin?period=1y"})
 	if w.Code != http.StatusOK {

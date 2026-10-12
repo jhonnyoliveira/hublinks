@@ -27,6 +27,31 @@
     if (d && d.id === "modal" && !d.open) document.getElementById("modal-body").innerHTML = "";
   }, true);
 
+  // Seletor de data: o campo de texto (dd/mm/aaaa) é o valor enviado; o botão abre
+  // o calendário nativo (input date escondido) e devolve o dia escolhido ao texto.
+  function brToIso(v) {
+    var m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(v.trim());
+    return m ? m[3] + "-" + m[2] + "-" + m[1] : "";
+  }
+  document.addEventListener("click", function (event) {
+    var btn = event.target.closest("[data-date-picker]");
+    if (!btn) return;
+    var box = btn.closest(".date-input");
+    var native = box.querySelector("[data-date-native]");
+    native.value = brToIso(box.querySelector("input[type=text]").value);
+    if (native.showPicker) { try { native.showPicker(); } catch (e) { native.focus(); } }
+    else native.focus();
+  });
+  document.addEventListener("change", function (event) {
+    var native = event.target.closest && event.target.closest("[data-date-native]");
+    if (!native || !native.value) return;
+    var p = native.value.split("-");
+    var text = native.closest(".date-input").querySelector("input[type=text]");
+    text.value = p[2] + "/" + p[1] + "/" + p[0];
+    text.dispatchEvent(new Event("input", { bubbles: true }));
+    text.focus();
+  });
+
   document.addEventListener("alpine:init", function () {
     var seq = 0;
     Alpine.data("toasts", function () {

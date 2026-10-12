@@ -199,6 +199,10 @@ dl.details dt { color: var(--muted); font-weight: 600; } dl.details dd { margin:
 .period-label { margin: var(--space-2) 0 var(--space-4); }
 .period-custom { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: end; }
 .period-custom .field { margin: 0; }
+.date-input { position: relative; display: flex; gap: .25rem; align-items: center; }
+.date-input input[type="text"] { width: 8.5rem; }
+/* O calendário nativo fica invisível sobre o botão: showPicker() o ancora ali. */
+.date-native { position: absolute; right: 0; bottom: 0; width: 2rem; height: 100%; opacity: 0; pointer-events: none; border: 0; padding: 0; }
 .stats-grid { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); }
 .stat-title { margin: 0; font-size: .9rem; font-weight: 500; color: var(--muted); }
 .stat-value { margin: var(--space-1) 0; font-size: 1.9rem; font-weight: 700; font-variant-numeric: tabular-nums; }

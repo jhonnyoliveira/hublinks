@@ -246,3 +246,15 @@ func TestTotalsForLinks(t *testing.T) {
 		t.Fatalf("outra org: %+v", other)
 	}
 }
+
+func TestCustomPeriodOnlyToday(t *testing.T) {
+	f := newFixture(t)
+	p, err := stats.ParsePeriod("", "2026-10-12", "2026-10-12", f.svc.Today(), tz)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s, err := f.svc.Summary(context.Background(), f.org, p)
+	if err != nil || s.Clicks != 1 || len(s.Daily) != 1 {
+		t.Fatalf("summary = %+v (%v)", s, err)
+	}
+}
