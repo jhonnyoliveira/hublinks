@@ -74,6 +74,7 @@ RUN mkdir -p /etc/apt/keyrings \
   > /etc/apt/sources.list.d/nodesource.list \
   && apt-get update \
   && apt-get install -y --no-install-recommends nodejs \
+  && ln -sf /usr/bin/node /usr/local/bin/node \
   && corepack enable \
   && rm -rf /var/lib/apt/lists/* \
   && node --version && npm --version
