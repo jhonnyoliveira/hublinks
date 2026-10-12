@@ -25,7 +25,9 @@ A **User Story 6 — histórico preservado com retenção automática** (T090–
 
 Atenção: `--day` refaz `click_daily` a partir de `click_events`; por isso é recusado (`ErrDayCleaned`) para dias já consolidados e fora de `EVENTS_RETENTION_DAYS`, cujos eventos podem já ter sido removidos.
 
-O próximo trabalho é a **User Story 7 — subir o serviço com um comando** (T100 em diante): Dockerfile, `deploy/docker-compose.yml` e `.env.example` já existem e precisam ser verificados contra a descrição de cada tarefa antes de serem marcados; preserve a infraestrutura de desenvolvimento (`.devcontainer/`, `Dockerfile.dev`).
+A **User Story 7 — subir o serviço com um comando** (T100–T103) foi auditada e corrigida: o estágio de CSS do `deploy/Dockerfile` copiava só `web/assets`, sem `base.css` nem os templates que `app.css` importa e varre (o build da imagem falharia), não levava o `manifest.json` para o estágio de build e usava Alpine (o Tailwind standalone é glibc). Agora usa Debian slim e copia todas as entradas. Também entraram `hublinks healthcheck` (a imagem final não tem shell), o healthcheck e o `restart` no compose, `POSTGRES_PASSWORD` (a `DATABASE_URL` do compose é montada a partir dela), `time/tzdata` embutido e testes que protegem o Dockerfile, o compose e a cobertura do `.env.example`. **T104 continua aberto:** não há Docker neste ambiente, então `docker build` e `docker compose up` **não foram executados**. Foram reproduzidos à mão, sem container, o estágio de CSS (com a mesma árvore de arquivos), o `go build` estático e a execução do binário (erro citando `PEPPER`, `/healthz`, `healthcheck`, CSS com hash servido). Quem tem Docker precisa rodar o passo 2 do `quickstart.md` e registrar o resultado.
+
+O próximo trabalho é a **Fase 10 — endurecimento** (T105 em diante, ver `tasks.md`), depois do T104 e dos aceites dos checkpoints das histórias 1 a 7.
 
 Pontos de atenção:
 

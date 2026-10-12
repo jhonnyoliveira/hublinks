@@ -29,7 +29,7 @@ docker compose -f deploy/docker-compose.yml --env-file deploy/.env up -d --build
 curl -s localhost:8080/healthz          # {"status":"ok"} em até 2 min
 ```
 
-Sem `PEPPER`, a aplicação deve sair com um erro que cita `PEPPER`.
+Sem `PEPPER`, a aplicação deve sair com um erro que cita `PEPPER`. O estado do healthcheck do compose aparece em `docker compose -f deploy/docker-compose.yml ps` (`healthy`).
 
 ## 3. Cadastro pelo painel (SC-001, História 1)
 

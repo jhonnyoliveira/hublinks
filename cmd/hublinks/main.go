@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	_ "time/tzdata" // fuso de relatório mesmo em imagens sem /usr/share/zoneinfo
 )
 
 func main() {
@@ -16,8 +17,8 @@ func main() {
 	if len(os.Args) > 1 {
 		command = os.Args[1]
 	}
-	if command != "serve" && command != "migrate" && command != "maintenance" {
-		fmt.Fprintln(os.Stderr, "uso: hublinks [serve|migrate [status]|maintenance run [--day YYYY-MM-DD]]")
+	if command != "serve" && command != "migrate" && command != "maintenance" && command != "healthcheck" {
+		fmt.Fprintln(os.Stderr, "uso: hublinks [serve|migrate [status]|maintenance run [--day YYYY-MM-DD]|healthcheck]")
 		os.Exit(2)
 	}
 	c, err := config.LoadEnv()
@@ -38,6 +39,13 @@ func main() {
 			}
 		}
 		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		return
+	}
+	if command == "healthcheck" {
+		if err := runHealthcheck(ctx, c); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}

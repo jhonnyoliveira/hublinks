@@ -1,22 +1,37 @@
+# Hub Links: aplicação + PostgreSQL.
+#   cp deploy/.env.example deploy/.env      # troque os valores fictícios
+#   docker compose -f deploy/docker-compose.yml --env-file deploy/.env up -d --build
 services:
   app:
     build:
       context: ..
       dockerfile: deploy/Dockerfile
     env_file: .env
+    # DATABASE_URL é montada aqui a partir de POSTGRES_PASSWORD, a mesma senha com que o
+    # banco é criado abaixo. Para usar um banco externo, troque esta linha.
+    environment:
+      DATABASE_URL: postgresql://hublinks:${POSTGRES_PASSWORD:-hublinks}@db:5432/hublinks?sslmode=disable
     ports:
-      - "8080:8080"
+      - "8080:8080" # as métricas (9091) ficam só na rede interna
+    restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "/hublinks", "healthcheck"]
+      interval: 10s
+      timeout: 5s
+      start_period: 30s
+      retries: 6
   db:
     image: postgres:16-alpine
     environment:
       POSTGRES_DB: hublinks
       POSTGRES_USER: hublinks
-      POSTGRES_PASSWORD: hublinks
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hublinks}
     volumes:
       - hublinks-postgres:/var/lib/postgresql/data
+    restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U hublinks -d hublinks"]
       interval: 5s

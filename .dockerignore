@@ -3,8 +3,12 @@
 node_modules/
 bin/
 coverage/
+docs/
+specs/
 *.log
+*.md
 .env*
 deploy/.env
+# O CSS compilado e o manifest são gerados no estágio "css" da imagem.
 web/static/css/app.*.css
 web/static/manifest.json

@@ -35,3 +35,4 @@ uma mensagem que nomeia a variável. Segredos nunca aparecem em logs.
   o worker e o scheduler.
 - `hublinks migrate [up|status]`.
 - `hublinks maintenance run [--day YYYY-MM-DD]`: agrega, limpa e expira a lixeira uma vez.
+- `hublinks healthcheck`: consulta `/healthz` em `HTTP_ADDR` e sai com 0 (saudável) ou 1; usado pelo healthcheck do compose, já que a imagem não tem shell nem `curl`.

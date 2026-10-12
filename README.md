@@ -23,8 +23,21 @@ métricas em `http://localhost:9091/metrics`, em porta separada do site. Qualque
 ambiente prevalece (`MANUAL_DB`, `PGHOST`, `PGUSER`, `PGPASSWORD`, `HTTP_ADDR`, `METRICS_ADDR`, `BASE_URL`,
 `ADMIN_EMAIL`, `ADMIN_PASSWORD`). Use `scripts/manual-run.sh --help` para o resumo.
 
-Para o deploy, copie `deploy/.env.example` para `deploy/.env`, substitua os valores fictícios e
-execute `docker compose -f deploy/docker-compose.yml --env-file deploy/.env up --build`.
+## Deploy
+
+Requisitos: Docker com o plugin Compose. Copie `deploy/.env.example` para `deploy/.env`, substitua os
+valores fictícios (principalmente `PEPPER`, `POSTGRES_PASSWORD`, `ADMIN_EMAIL` e `ADMIN_PASSWORD`) e execute:
+
+```bash
+docker compose -f deploy/docker-compose.yml --env-file deploy/.env up -d --build
+curl -s localhost:8080/healthz        # {"status":"ok"}
+```
+
+O compose sobe a aplicação (imagem multi-stage: CSS com Tailwind standalone → binário Go estático →
+distroless, usuário não root) e o PostgreSQL 16 com volume. As migrações rodam na partida e o healthcheck
+da aplicação usa o próprio binário (`hublinks healthcheck`). A porta de métricas (`9091`) não é publicada;
+atrás de um proxy reverso, veja [`docs/operacao.md`](docs/operacao.md) (`TRUSTED_PROXIES`, `Host`).
+Sem `PEPPER`, a aplicação sai com um erro que cita a variável.
 
 As variáveis, seus padrões e exigências estão documentados em
 [`contracts/config.md`](specs/001-encurtador-analytics/contracts/config.md). `PEPPER` é um segredo
