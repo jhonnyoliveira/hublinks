@@ -331,3 +331,44 @@ func TestUserStory2EndToEnd(t *testing.T) {
 		t.Fatalf("detalhe sem estatísticas:\n%s", w.Body.String())
 	}
 }
+
+// TestUserStory3EndToEnd: o crawler recebe a prévia e não gera evento; a mesma
+// URL redireciona para um navegador; o 404 e a página de privacidade trazem o aviso.
+func TestUserStory3EndToEnd(t *testing.T) {
+	a := newApp(t)
+	a.do(http.MethodPost, "/admin/marketplaces", true, url.Values{"name": {"Loja"}, "shorten_policy": {"shorten"}}, true)
+	w := a.do(http.MethodGet, "/admin/links/new", true, nil, false)
+	mpID := regexp.MustCompile(`<option value="([0-9a-f-]{36})">Loja</option>`).FindStringSubmatch(w.Body.String())[1]
+	w = a.do(http.MethodPost, "/admin/links", true, url.Values{"title": {"Produto"}, "destination_url": {"https://example.com/p"}, "marketplace_id": {mpID}, "active": {"true"}}, false)
+	w = a.do(http.MethodGet, w.Header().Get("Location"), true, nil, false)
+	code := regexp.MustCompile(`https://hub\.example/([0-9a-z]{7})`).FindStringSubmatch(w.Body.String())[1]
+
+	get := func(path, ua string) *httptest.ResponseRecorder {
+		r := httptest.NewRequest(http.MethodGet, path, nil)
+		r.Header.Set("User-Agent", ua)
+		rec := httptest.NewRecorder()
+		a.h.ServeHTTP(rec, r)
+		return rec
+	}
+	for _, ua := range []string{"WhatsApp/2.23", "TelegramBot (like TwitterBot)", "facebookexternalhit/1.1"} {
+		rec := get("/"+code, ua)
+		body := rec.Body.String()
+		if rec.Code != http.StatusOK || rec.Header().Get("Location") != "" || !strings.Contains(body, `og:title" content="Produto"`) || !strings.Contains(body, `href="/privacidade"`) || rec.Header().Get("Set-Cookie") != "" {
+			t.Fatalf("%s: %d\n%s", ua, rec.Code, body)
+		}
+	}
+	if rec := get("/"+code, "Mozilla/5.0 (iPhone) Safari/604.1"); rec.Code != http.StatusFound {
+		t.Fatalf("navegador: %d", rec.Code)
+	}
+	time.Sleep(300 * time.Millisecond) // lote de 50 ms
+	w = a.do(http.MethodGet, "/api/v1/stats/summary?period=7d", true, nil, false)
+	if !strings.Contains(w.Body.String(), `"clicks":1,`) {
+		t.Fatalf("só o acesso do navegador conta: %s", w.Body.String())
+	}
+	for _, path := range []string{"/zzzzzzz", "/privacidade"} {
+		rec := get(path, "Mozilla/5.0")
+		if !strings.Contains(rec.Body.String(), `id="privacy-notice"`) || rec.Header().Get("Set-Cookie") != "" {
+			t.Fatalf("%s sem aviso de privacidade ou com cookie", path)
+		}
+	}
+}

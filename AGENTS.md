@@ -15,7 +15,9 @@ A fundação (T001–T032) foi auditada contra a descrição de cada tarefa e a 
 
 A **User Story 2 — Ver cliques totais e únicos** (T053–T069) está implementada e testada: fila e worker de eventos (lotes, retentativas, reinício após pânico, drenagem no desligamento), flags de unicidade, estatísticas por link/canal/dia (`internal/stats`), rotas `/api/v1/stats/*`, dashboard com gráfico (uPlot), estatísticas nas telas de links e servidor de métricas em `METRICS_ADDR`. Os cenários da spec foram exercitados contra o servidor real (curl): 2 cliques/1 único com o mesmo UA, novo único com outro UA e alcance por canal. O gráfico (`web/static/js/chart.js`) **ainda não foi verificado em navegador**; só passou por `node --check`. Falta o aceite do checkpoint da US2 pelo responsável.
 
-O próximo trabalho é a **User Story 3 — prévia de crawler** (T070 em diante). Siga a ordem do `tasks.md`; o `redirect.IsCrawler` e a página `public/preview` já existem e precisam ser verificados contra a descrição de cada tarefa antes de serem marcados.
+A **User Story 3 — prévia de compartilhamento** (T070–T077) está implementada e testada: crawlers conhecidos recebem a prévia Open Graph (`redirect/preview.go`) sem gerar evento, a detecção de automação (5 códigos distintos em 10 s pelo mesmo IP → `is_bot`) limpa as chaves expiradas, e `/privacidade` e o aviso das páginas públicas seguem a configuração. Foi exercitada contra o servidor real (curl): prévia `200` com metatags, o 5º código distinto gravado como robô e fora das estatísticas. Falta o aceite do checkpoint da US3 pelo responsável; o item 5 do `quickstart.md` está coberto.
+
+O próximo trabalho é a **User Story 4 — painel no celular, claro e escuro** (T078 em diante). Siga a ordem do `tasks.md` e verifique cada tarefa contra a descrição antes de marcá-la; boa parte do visual da fundação já existe.
 
 Pontos de atenção:
 

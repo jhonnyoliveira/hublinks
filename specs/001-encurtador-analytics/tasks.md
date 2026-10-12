@@ -420,7 +420,7 @@ não mudam; 5 códigos distintos em 10 s pelo mesmo IP → o 5º é `is_bot`.
 
 ### Tests for User Story 3
 
-- [ ] T070 [P] [US3] Testes em `internal/redirect/bots_test.go`:
+- [X] T070 [P] [US3] Testes em `internal/redirect/bots_test.go`:
   - detecção dos UAs de R9, sem diferenciar maiúsculas;
   - UA comum não é crawler;
   - janela deslizante: com 4 códigos distintos em 10 s, o 5º e os seguintes da janela são
@@ -429,7 +429,7 @@ não mudam; 5 códigos distintos em 10 s pelo mesmo IP → o 5º é `is_bot`.
   - após a janela, a contagem é zerada;
   - limites lidos de `BOT_DISTINCT_CODES`/`BOT_WINDOW`;
   - executar com `-race`.
-- [ ] T071 [P] [US3] Testes HTTP em `internal/redirect/preview_test.go`:
+- [X] T071 [P] [US3] Testes HTTP em `internal/redirect/preview_test.go`:
   - crawler → `200`, sem `Location` e sem evento enfileirado;
   - `og:title`, `og:description` ("Disponível em {marketplace}"), `og:url` absoluta,
     `og:type=website` e `twitter:card` (`summary_large_image` com imagem, `summary` sem);
@@ -437,7 +437,7 @@ não mudam; 5 códigos distintos em 10 s pelo mesmo IP → o 5º é `is_bot`.
   - `<meta name="robots" content="noindex">`;
   - aviso com link para `/privacidade`;
   - sem `Set-Cookie` e sem URLs de terceiros.
-- [ ] T072 [P] [US3] Teste HTTP em `internal/web/privacy_test.go`: `GET /privacidade` → `200`
+- [X] T072 [P] [US3] Teste HTTP em `internal/web/privacy_test.go`: `GET /privacidade` → `200`
   com os prazos de `EVENTS_RETENTION_DAYS`, `BOT_EVENTS_RETENTION_DAYS` e
   `TRASH_RETENTION_DAYS`, o `PRIVACY_CONTACT`, a menção ao identificador anônimo sem cookies e o
   aviso; sem `Set-Cookie`.
@@ -447,15 +447,15 @@ não mudam; 5 códigos distintos em 10 s pelo mesmo IP → o 5º é `is_bot`.
 - [X] T073 [P] [US3] Implementar `internal/redirect/bots.go`: `IsCrawler(ua)` com a lista de R9
   e o detector de automação (janela deslizante em memória por chave `httpx.Key`, com limpeza
   periódica de entradas expiradas).
-- [ ] T074 [US3] Integrar no `internal/redirect/handler.go`: crawler → prévia sem evento;
+- [X] T074 [US3] Integrar no `internal/redirect/handler.go`: crawler → prévia sem evento;
   automação → `302` e evento com `is_bot=true`.
-- [ ] T075 [P] [US3] Revisar o texto do aviso em `web/templates/components/privacy_notice.html`
+- [X] T075 [P] [US3] Revisar o texto do aviso em `web/templates/components/privacy_notice.html`
   (criado no T031) com a finalidade e o link para `/privacidade`, e garantir que
   `web/templates/public/404.html` usa o layout `public` e, portanto, exibe o aviso.
-- [ ] T076 [US3] Criar `web/templates/public/preview.html` (layout `public`, mobile first:
+- [X] T076 [US3] Criar `web/templates/public/preview.html` (layout `public`, mobile first:
   imagem com dimensões declaradas, título, botão principal para o destino e aviso) e
   `internal/redirect/preview.go`.
-- [ ] T077 [US3] Implementar `internal/web/privacy.go` e `web/templates/public/privacidade.html`,
+- [X] T077 [US3] Implementar `internal/web/privacy.go` e `web/templates/public/privacidade.html`,
   com o conteúdo de FR-023 a partir da configuração.
 
 **Checkpoint**: História 3 completa; o passo 5 do `quickstart.md` funciona.

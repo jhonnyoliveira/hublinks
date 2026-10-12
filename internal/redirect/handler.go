@@ -87,14 +87,3 @@ func (h *Handler) notFound(w http.ResponseWriter) {
 		http.Error(w, "erro ao renderizar página", http.StatusInternalServerError)
 	}
 }
-func (h *Handler) preview(w http.ResponseWriter, r *http.Request, l domain.AffiliateLink) {
-	u := strings.TrimSuffix(h.BaseURL, "/") + r.URL.Path
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	data := struct {
-		Title, Marketplace, URL, DestinationURL string
-		ImageURL                                *string
-	}{l.Title, l.Marketplace.Name, u, l.DestinationURL, l.ImageURL}
-	if err := webtmpl.Render(w, "public", "public/preview", data); err != nil {
-		http.Error(w, "erro ao renderizar página", http.StatusInternalServerError)
-	}
-}

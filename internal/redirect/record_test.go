@@ -110,3 +110,36 @@ func TestCutKeepsValidUTF8(t *testing.T) {
 		t.Fatalf("cut = %q", got)
 	}
 }
+
+// Cinco códigos distintos em poucos segundos pelo mesmo IP: o 5º vira robô e os
+// quatro anteriores continuam sendo acessos reais.
+func TestRecorderFlagsAutomationOnFifthDistinctCode(t *testing.T) {
+	w := &captureWriter{}
+	q := events.NewQueue(20, 1, time.Hour, w, nil)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go q.Run(ctx)
+	h, _, _ := recordHandler(domain.PolicyShorten, q)
+	for _, code := range []string{"aaaaaaa", "bbbbbbb", "ccccccc", "ddddddd", "eeeeeee"} {
+		r := httptest.NewRequest(http.MethodGet, "/"+code, nil)
+		r.RemoteAddr = "203.0.113.9:1234"
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, r)
+		if rec.Code != http.StatusFound {
+			t.Fatalf("%s: %d", code, rec.Code)
+		}
+	}
+	deadline := time.Now().Add(2 * time.Second)
+	for len(w.all()) < 5 && time.Now().Before(deadline) {
+		time.Sleep(time.Millisecond)
+	}
+	got := w.all()
+	if len(got) != 5 {
+		t.Fatalf("eventos: %d", len(got))
+	}
+	for i, e := range got {
+		if e.IsBot != (i == 4) {
+			t.Fatalf("evento %d (%s): is_bot=%v", i+1, e.Code, e.IsBot)
+		}
+	}
+}

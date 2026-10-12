@@ -1,2 +1,17 @@
 {{define "head"}}<title>Privacidade | Hub Links</title>{{end}}
-{{define "content"}}<main><h1>Privacidade</h1><p>Usamos um identificador anônimo derivado de IP e user-agent, protegido por hash, sem cookies de rastreamento. A finalidade é produzir estatísticas de divulgação.</p><p>Eventos reais são retidos por {{.EventsRetentionDays}} dias; eventos de robôs por {{.BotEventsRetentionDays}} dias; itens na lixeira por {{.TrashRetentionDays}} dias.</p><p>Para solicitar exclusão, escreva para <a href="mailto:{{.PrivacyContact}}">{{.PrivacyContact}}</a>.</p></main>{{end}}
+{{define "content"}}<main class="prose">
+<h1>Privacidade</h1>
+<h2>O que medimos e por quê</h2>
+<p>Contamos cliques nos links de divulgação para saber quantas pessoas os acessaram e por qual canal. Para diferenciar visitantes, geramos um <strong>identificador anônimo</strong>: um código irreversível calculado a partir do endereço de rede (IPv6 pelo prefixo /64) e do navegador, protegido por um segredo do servidor.</p>
+<p>O endereço de rede em si <strong>não é armazenado</strong> nem registrado nos logs. <strong>Não usamos cookies</strong> nem outras marcas no seu navegador para rastrear você; a única informação guardada aqui é a escolha de dispensar o aviso de privacidade.</p>
+<h2>Por quanto tempo guardamos</h2>
+<ul>
+<li>Acessos de pessoas: {{.EventsRetentionDays}} dias.</li>
+<li>Acessos identificados como automação (robôs): {{.BotEventsRetentionDays}} dias.</li>
+<li>Totais diários, sem identificador de visitante: sem prazo.</li>
+<li>Identificadores anônimos usados para contar visitantes únicos: enquanto o link existir.</li>
+<li>Itens excluídos do painel ficam na lixeira por {{.TrashRetentionDays}} dias.</li>
+</ul>
+<h2>Seus direitos</h2>
+<p>Para pedir informações ou a exclusão de dados, escreva para <a href="mailto:{{.PrivacyContact}}">{{.PrivacyContact}}</a>.</p>
+</main>{{end}}
