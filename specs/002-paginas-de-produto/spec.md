@@ -27,9 +27,9 @@ pública com endereço amigável e um código curto para divulgação.
 **Why this priority**: sem produto publicado não existe página; é o núcleo que as demais histórias
 enriquecem e medem.
 
-**Independent Test**: criar um produto com título, imagem e um link de afiliado, abrir a pré-visualização como
-administrador, publicar e abrir o endereço público sem sessão. Entrega valor sozinho: o produto já é
-divulgável com uma página própria.
+**Independent Test**: criar um produto com título, imagem e um link de afiliado, publicá-lo e conferir, no
+painel e pela interface programática, o endereço amigável e o código curto gerados; despublicar, excluir e
+restaurar. A pré-visualização e a abertura do endereço público dependem da página pública (História 2).
 
 **Acceptance Scenarios**:
 
@@ -198,8 +198,8 @@ conferir ambos no painel e na página pública.
   (limitação aceita e documentada).
 - Recarregar a página várias vezes: cada abertura é uma visita; a contagem de únicos não cresce.
 - Uso abusivo (muitas aberturas ou registros de visita do mesmo IP): limitado como as demais rotas públicas.
-- Grupo de especificações sem itens, ou item com valor muito longo: o administrador é avisado e a página não
-  quebra.
+- Grupo de especificações sem itens, ou item com valor muito longo: o formulário recusa o salvamento com mensagem
+  indicando o grupo ou item; na página pública, grupos sem itens nunca aparecem.
 
 ## Requirements *(mandatory)*
 
