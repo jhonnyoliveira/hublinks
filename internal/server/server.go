@@ -37,6 +37,8 @@ func New(pool *pgxpool.Pool, c config.Config) http.Handler {
 type App struct {
 	Handler http.Handler
 	Metrics *metrics.Metrics
+	// Cache é o cache de resolução de códigos, que a manutenção limpa ao expirar a lixeira.
+	Cache   *redirect.Cache
 	Drained <-chan struct{}
 }
 
@@ -129,7 +131,7 @@ func Build(ctx context.Context, pool *pgxpool.Pool, c config.Config) App {
 	public := &redirect.Handler{Catalog: store.NewCatalog(pool), Cache: resolutionCache, BaseURL: c.BaseURL, Recorder: recorder}
 	mux.Handle("GET /", httpx.NewRateLimiter(c.Pepper, c.PublicRateLimit).WithTrustedProxies(c.TrustedProxies).Middleware(public))
 	logger := newLogger(c.LogLevel)
-	return App{Handler: httpx.Recover(httpx.Log(crossOrigin(mux), logger), logger), Metrics: m, Drained: drained}
+	return App{Handler: httpx.Recover(httpx.Log(crossOrigin(mux), logger), logger), Metrics: m, Cache: resolutionCache, Drained: drained}
 }
 
 // MetricsHandler serve /metrics (formato Prometheus) em porta separada da
@@ -176,14 +178,15 @@ func Run(ctx context.Context, c config.Config) error {
 	if err = (maintenance.Manager{Pool: pool, Config: c}).CheckTimezone(ctx); err != nil {
 		return err
 	}
-	if err = (maintenance.Manager{Pool: pool, Config: c}).Start(ctx); err != nil {
+	app := Build(ctx, pool, c)
+	mgr := maintenance.Manager{Pool: pool, Config: c, Metrics: app.Metrics, OnPurge: app.Cache.InvalidateAll}
+	if err = mgr.Start(ctx); err != nil {
 		return err
 	}
 	ln, err := net.Listen("tcp", c.HTTPAddr)
 	if err != nil {
 		return err
 	}
-	app := Build(ctx, pool, c)
 	if c.MetricsAddr != "" {
 		mln, merr := net.Listen("tcp", c.MetricsAddr)
 		if merr != nil {

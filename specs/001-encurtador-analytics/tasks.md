@@ -551,47 +551,47 @@ contagens (idênticas); reexecutar (sem mudança); um link na lixeira há 31 dia
 
 ### Tests for User Story 6
 
-- [ ] T090 [P] [US6] Testes de integração em `internal/maintenance/aggregate_test.go`:
+- [X] T090 [P] [US6] Testes de integração em `internal/maintenance/aggregate_test.go`:
   - agrega por `(occurred_at AT TIME ZONE REPORT_TZ)::date`, ignorando robôs;
   - reexecutar o mesmo dia produz valores idênticos;
   - todos os dias passados não agregados são processados (recuperação de atraso);
   - o dia corrente não é agregado;
   - `aggregated_days` é registrado.
-- [ ] T091 [P] [US6] Testes de integração em `internal/maintenance/cleanup_test.go`:
+- [X] T091 [P] [US6] Testes de integração em `internal/maintenance/cleanup_test.go`:
   - remove eventos reais com mais de 395 dias e de robôs com mais de 30, só em dias presentes em
     `aggregated_days`;
   - dias não agregados são preservados;
   - o corte é por dia em `REPORT_TZ`: eventos cujo dia local é `< hoje(REPORT_TZ) − N` são
     removidos; um evento às 23h30 (horário de Brasília) do dia-limite é preservado;
   - as contagens totais e únicas de `stats` são idênticas antes e depois (SC-006).
-- [ ] T092 [P] [US6] Testes de integração em `internal/maintenance/trash_test.go`:
+- [X] T092 [P] [US6] Testes de integração em `internal/maintenance/trash_test.go`:
   - item com `deleted_at` há mais de `TRASH_RETENTION_DAYS` recebe `purged_at`;
   - para links, apaga `visitor_seen` do alvo;
   - `click_daily` permanece e entra nos totais;
   - o código continua respondendo `404` e nunca é reutilizado;
   - restaurar antes do prazo mantém `visitor_seen` (visitante antigo não vira único novo).
-- [ ] T093 [P] [US6] Teste de integração em `internal/maintenance/timezone_test.go`:
+- [X] T093 [P] [US6] Teste de integração em `internal/maintenance/timezone_test.go`:
   - a primeira agregação grava `report_timezone` em `app_settings`;
   - partir com outro `REPORT_TZ` aborta com erro claro.
 
 ### Implementation for User Story 6
 
-- [ ] T094 [US6] Implementar `internal/maintenance/aggregate.go`. Por dia e org, em transação:
+- [X] T094 [US6] Implementar `internal/maintenance/aggregate.go`. Por dia e org, em transação:
   `DELETE` de `click_daily`, `INSERT … SELECT` com `SUM(is_unique_url::int)` e
   `SUM(is_unique_target::int)` (com `channel_id` nulo convertido no UUID nulo) e upsert em
   `aggregated_days`.
-- [ ] T095 [US6] Implementar `internal/maintenance/cleanup.go`: remove `click_events` com
+- [X] T095 [US6] Implementar `internal/maintenance/cleanup.go`: remove `click_events` com
   `(occurred_at AT TIME ZONE REPORT_TZ)::date < hoje(REPORT_TZ) − EVENTS_RETENTION_DAYS` (reais)
   ou `− BOT_EVENTS_RETENTION_DAYS` (`is_bot`), sempre com `EXISTS (aggregated_days)` do mesmo
   dia e org, em lotes de 10 000 linhas.
-- [ ] T096 [US6] Implementar `internal/maintenance/trash.go`: expiração da lixeira, com
+- [X] T096 [US6] Implementar `internal/maintenance/trash.go`: expiração da lixeira, com
   `purged_at` e `DELETE FROM visitor_seen` para links, e invalidação do cache de resolução.
-- [ ] T097 [US6] Implementar `internal/maintenance/timezone.go` (fixa e verifica `REPORT_TZ`) e
+- [X] T097 [US6] Implementar `internal/maintenance/timezone.go` (fixa e verifica `REPORT_TZ`) e
   chamá-lo na partida em `internal/server/server.go`.
 - [X] T098 [US6] Implementar `internal/maintenance/scheduler.go`: execução diária em
   `MAINTENANCE_AT` no `REPORT_TZ`, protegida por `pg_try_advisory_lock`, com métrica de duração
   e falhas; ligado em `serve`.
-- [ ] T099 [US6] Implementar `hublinks maintenance run [--day YYYY-MM-DD]` em
+- [X] T099 [US6] Implementar `hublinks maintenance run [--day YYYY-MM-DD]` em
   `cmd/hublinks/maintenance.go` (agrega, limpa e expira uma vez; com `--day`, reagrega aquele dia).
 
 **Checkpoint**: História 6 completa; o passo 8 do `quickstart.md` funciona.

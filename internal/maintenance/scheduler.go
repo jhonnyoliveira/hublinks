@@ -3,9 +3,14 @@ package maintenance
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 )
 
+// Start agenda a manutenção diária em MAINTENANCE_AT (HH:MM, em REPORT_TZ) até
+// ctx ser cancelado. Cada instância agenda, mas só uma executa por vez
+// (advisory lock). Um atraso é recuperado na execução seguinte, que consolida
+// todos os dias pendentes.
 func (m Manager) Start(ctx context.Context) error {
 	clock, err := time.Parse("15:04", m.Config.MaintenanceAt)
 	if err != nil {
@@ -13,33 +18,28 @@ func (m Manager) Start(ctx context.Context) error {
 	}
 	go func() {
 		for {
-			now := time.Now().In(m.Config.ReportTZ)
-			next := time.Date(now.Year(), now.Month(), now.Day(), clock.Hour(), clock.Minute(), 0, 0, m.Config.ReportTZ)
-			if !next.After(now) {
-				next = next.AddDate(0, 0, 1)
-			}
+			next := m.nextRun(clock, m.now())
 			timer := time.NewTimer(time.Until(next))
 			select {
 			case <-ctx.Done():
 				timer.Stop()
 				return
 			case <-timer.C:
-				m.runLocked(ctx)
+				if _, ran, err := m.RunExclusive(ctx, nil); err == nil && !ran {
+					slog.Info("manutenção já está em andamento em outra instância")
+				}
 			}
 		}
 	}()
 	return nil
 }
-func (m Manager) runLocked(ctx context.Context) {
-	conn, err := m.Pool.Acquire(ctx)
-	if err != nil {
-		return
+
+// nextRun devolve o próximo horário de execução depois de now, em REPORT_TZ.
+func (m Manager) nextRun(clock, now time.Time) time.Time {
+	local := now.In(m.loc())
+	next := time.Date(local.Year(), local.Month(), local.Day(), clock.Hour(), clock.Minute(), 0, 0, m.loc())
+	if !next.After(local) {
+		next = time.Date(local.Year(), local.Month(), local.Day()+1, clock.Hour(), clock.Minute(), 0, 0, m.loc())
 	}
-	defer conn.Release()
-	var locked bool
-	if err = conn.QueryRow(ctx, "SELECT pg_try_advisory_lock(845801)").Scan(&locked); err != nil || !locked {
-		return
-	}
-	defer conn.Exec(context.Background(), "SELECT pg_advisory_unlock(845801)")
-	_ = m.Run(ctx, nil)
+	return next
 }

@@ -25,3 +25,20 @@ O limite de taxa (`PUBLIC_RATE_LIMIT`, por minuto) e o bloqueio de login usam o 
 
 Quem excede a cota recebe `429` com `Retry-After` (segundos). A janela é deslizante: depois de esgotar a cota de uma vez, a espera pode chegar a 60 s. `/healthz`, `/privacidade` e `/static` não entram nesse limite.
 
+## Manutenção diária
+
+Todo dia, em `MAINTENANCE_AT` (padrão `00:30`, no fuso `REPORT_TZ`), o serviço: (1) consolida os cliques de cada dia passado ainda não consolidado, sem robôs, em `click_daily`; (2) remove eventos além da retenção (`EVENTS_RETENTION_DAYS` para reais, `BOT_EVENTS_RETENTION_DAYS` para robôs), **somente de dias já consolidados**; (3) torna definitiva a exclusão de itens na lixeira há mais de `TRASH_RETENTION_DAYS`, apagando o registro de unicidade dos links. Os totais e os visitantes únicos não mudam com a limpeza. Só uma instância executa por vez (advisory lock).
+
+Execução manual (por exemplo, para recuperar um atraso ou reconsolidar um dia):
+
+```bash
+hublinks maintenance run                      # consolida os dias pendentes, limpa e expira a lixeira
+hublinks maintenance run --day 2026-10-01     # reconsolida esse dia (YYYY-MM-DD, em REPORT_TZ)
+```
+
+`--day` recusa o dia corrente e dias já consolidados que estão fora da retenção de eventos: refazer a consolidação a partir de eventos já removidos zeraria o histórico.
+
+`REPORT_TZ` é fixado na primeira consolidação. Depois disso, subir o serviço com outro fuso falha com uma mensagem que indica o fuso correto; não altere o fuso de uma instalação com dados.
+
+Métricas: `hublinks_maintenance_duration_seconds`, `hublinks_maintenance_failures_total` e `hublinks_maintenance_last_success_timestamp_seconds`. Alerte se não houver sucesso há mais de 26 horas.
+

@@ -1,113 +1,131 @@
+// Package maintenance consolida os cliques por dia, remove eventos antigos de
+// dias já consolidados e expira a lixeira. Tudo é idempotente e restrito ao
+// fuso de relatório (REPORT_TZ).
 package maintenance
 
 import (
 	"context"
 	"fmt"
-	"github.com/hublinks/hublinks/internal/config"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"log/slog"
 	"time"
+
+	"github.com/hublinks/hublinks/internal/config"
+	"github.com/hublinks/hublinks/internal/metrics"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+const dateLayout = "2006-01-02"
+
+// lockID identifica o advisory lock que impede duas manutenções simultâneas
+// (o agendador de cada instância e o comando manual).
+const lockID = 845801
 
 type Manager struct {
 	Pool   *pgxpool.Pool
 	Config config.Config
+	// Metrics e OnPurge são opcionais. OnPurge limpa o cache de resolução do
+	// processo depois de uma exclusão definitiva.
+	Metrics *metrics.Metrics
+	OnPurge func()
+	// Now permite fixar o relógio nos testes (nil = time.Now).
+	Now func() time.Time
 }
 
-func (m Manager) CheckTimezone(ctx context.Context) error {
-	var value string
-	err := m.Pool.QueryRow(ctx, "SELECT value FROM app_settings WHERE key='report_timezone'").Scan(&value)
-	if err != nil {
-		_, e := m.Pool.Exec(ctx, "INSERT INTO app_settings(key,value) VALUES('report_timezone',$1) ON CONFLICT DO NOTHING", m.Config.ReportTZ.String())
-		return e
+func (m Manager) now() time.Time {
+	if m.Now != nil {
+		return m.Now()
 	}
-	if value != m.Config.ReportTZ.String() {
-		return fmt.Errorf("REPORT_TZ difere do fuso já usado nas agregações")
-	}
-	return nil
+	return time.Now()
 }
-func (m Manager) Aggregate(ctx context.Context, day time.Time) error {
-	day = day.In(m.Config.ReportTZ)
-	start := time.Date(day.Year(), day.Month(), day.Day(), 0, 0, 0, 0, m.Config.ReportTZ)
-	end := start.AddDate(0, 0, 1)
-	tx, err := m.Pool.Begin(ctx)
-	if err != nil {
-		return err
+
+func (m Manager) loc() *time.Location {
+	if m.Config.ReportTZ == nil {
+		return time.UTC
 	}
-	defer tx.Rollback(ctx)
-	rows, err := tx.Query(ctx, "SELECT id FROM organizations")
-	if err != nil {
-		return err
-	}
-	defer rows.Close()
-	for rows.Next() {
-		var org string
-		if err = rows.Scan(&org); err != nil {
-			return err
-		}
-		if _, err = tx.Exec(ctx, "DELETE FROM click_daily WHERE org_id=$1 AND day=$2", org, start.Format("2006-01-02")); err != nil {
-			return err
-		}
-		_, err = tx.Exec(ctx, `INSERT INTO click_daily(org_id,day,event_type,target_type,target_id,channel_id,clicks,unique_url,unique_target) SELECT org_id,$1,'click','affiliate_link',target_id,COALESCE(channel_id,'00000000-0000-0000-0000-000000000000'),count(*),sum(is_unique_url::int),sum(is_unique_target::int) FROM click_events WHERE org_id=$2 AND occurred_at >= $3 AND occurred_at < $4 AND NOT is_bot GROUP BY org_id,target_id,COALESCE(channel_id,'00000000-0000-0000-0000-000000000000')`, start.Format("2006-01-02"), org, start.UTC(), end.UTC())
-		if err != nil {
-			return err
-		}
-		if _, err = tx.Exec(ctx, "INSERT INTO aggregated_days(org_id,day,aggregated_at) VALUES($1,$2,$3) ON CONFLICT (org_id,day) DO UPDATE SET aggregated_at=EXCLUDED.aggregated_at", org, start.Format("2006-01-02"), time.Now().UTC()); err != nil {
-			return err
-		}
-	}
-	return tx.Commit(ctx)
+	return m.Config.ReportTZ
 }
-func (m Manager) Cleanup(ctx context.Context) error {
-	today := time.Now().In(m.Config.ReportTZ)
-	realCut := today.AddDate(0, 0, -m.Config.EventsRetentionDays)
-	botCut := today.AddDate(0, 0, -m.Config.BotEventsRetentionDays)
-	_, err := m.Pool.Exec(ctx, `DELETE FROM click_events e WHERE EXISTS (SELECT 1 FROM aggregated_days a WHERE a.org_id=e.org_id AND a.day=(e.occurred_at AT TIME ZONE $1)::date) AND ((NOT e.is_bot AND (e.occurred_at AT TIME ZONE $1)::date < $2) OR (e.is_bot AND (e.occurred_at AT TIME ZONE $1)::date < $3))`, m.Config.ReportTZ.String(), realCut.Format("2006-01-02"), botCut.Format("2006-01-02"))
-	return err
+
+// civil devolve a meia-noite de t no fuso de relatório.
+func (m Manager) civil(t time.Time) time.Time {
+	t = t.In(m.loc())
+	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, m.loc())
 }
-func (m Manager) ExpireTrash(ctx context.Context) error {
-	cut := time.Now().UTC().AddDate(0, 0, -m.Config.TrashRetentionDays)
-	tx, err := m.Pool.Begin(ctx)
+
+// Today é o dia corrente (meia-noite) em REPORT_TZ.
+func (m Manager) Today() time.Time { return m.civil(m.now()) }
+
+// ParseDay interpreta YYYY-MM-DD em REPORT_TZ; só aceita dias já encerrados.
+func (m Manager) ParseDay(s string) (time.Time, error) {
+	d, err := time.ParseInLocation(dateLayout, s, m.loc())
 	if err != nil {
-		return err
+		return time.Time{}, fmt.Errorf("dia inválido %q: use YYYY-MM-DD", s)
 	}
-	defer tx.Rollback(ctx)
-	rows, err := tx.Query(ctx, "UPDATE affiliate_links SET purged_at=now() WHERE deleted_at < $1 AND purged_at IS NULL RETURNING id", cut)
-	if err != nil {
-		return err
+	if !d.Before(m.Today()) {
+		return time.Time{}, fmt.Errorf("o dia %s ainda não terminou em %s: só dias anteriores a hoje podem ser consolidados", s, m.loc())
 	}
-	for rows.Next() {
-		var id string
-		if err = rows.Scan(&id); err != nil {
-			return err
-		}
-		if _, err = tx.Exec(ctx, "DELETE FROM visitor_seen WHERE target_type='affiliate_link' AND target_id=$1", id); err != nil {
-			return err
-		}
-	}
-	rows.Close()
-	if _, err = tx.Exec(ctx, "UPDATE marketplaces SET purged_at=now() WHERE deleted_at < $1 AND purged_at IS NULL", cut); err != nil {
-		return err
-	}
-	if _, err = tx.Exec(ctx, "UPDATE channels SET purged_at=now() WHERE deleted_at < $1 AND purged_at IS NULL", cut); err != nil {
-		return err
-	}
-	return tx.Commit(ctx)
+	return d, nil
 }
-func (m Manager) Run(ctx context.Context, day *time.Time) error {
+
+// Report resume uma execução.
+type Report struct {
+	AggregatedDays int   // pares (organização, dia) consolidados
+	DeletedEvents  int64 // eventos removidos pela retenção
+	Purged         TrashReport
+}
+
+// Run consolida, limpa e expira a lixeira uma vez. Sem day, consolida todos os
+// dias passados ainda não consolidados (recupera atrasos); com day, reconsolida
+// somente aquele dia.
+func (m Manager) Run(ctx context.Context, day *time.Time) (Report, error) {
+	var r Report
 	if err := m.CheckTimezone(ctx); err != nil {
-		return err
+		return r, err
 	}
+	var err error
 	if day != nil {
-		if err := m.Aggregate(ctx, *day); err != nil {
-			return err
-		}
+		r.AggregatedDays, err = m.AggregateDay(ctx, *day)
 	} else {
-		if err := m.Aggregate(ctx, time.Now().In(m.Config.ReportTZ).AddDate(0, 0, -1)); err != nil {
-			return err
+		r.AggregatedDays, err = m.AggregatePending(ctx)
+	}
+	if err != nil {
+		return r, err
+	}
+	if r.DeletedEvents, err = m.Cleanup(ctx); err != nil {
+		return r, err
+	}
+	r.Purged, err = m.ExpireTrash(ctx)
+	return r, err
+}
+
+// RunExclusive é Run protegido por advisory lock: se outra manutenção estiver em
+// andamento, não faz nada e devolve ran=false. Registra duração e falhas.
+func (m Manager) RunExclusive(ctx context.Context, day *time.Time) (r Report, ran bool, err error) {
+	conn, err := m.Pool.Acquire(ctx)
+	if err != nil {
+		return r, false, err
+	}
+	defer conn.Release()
+	var locked bool
+	if err = conn.QueryRow(ctx, "SELECT pg_try_advisory_lock($1)", lockID).Scan(&locked); err != nil || !locked {
+		return r, false, err
+	}
+	defer func() { _, _ = conn.Exec(context.Background(), "SELECT pg_advisory_unlock($1)", lockID) }()
+	start := time.Now()
+	r, err = m.Run(ctx, day)
+	if m.Metrics != nil {
+		m.Metrics.MaintenanceDuration.Set(time.Since(start).Seconds())
+		if err != nil {
+			m.Metrics.MaintenanceFailures.Inc()
+		} else {
+			m.Metrics.MaintenanceLastSuccess.SetToCurrentTime()
 		}
 	}
-	if err := m.Cleanup(ctx); err != nil {
-		return err
+	if err != nil {
+		slog.Error("manutenção falhou", "error", err)
+	} else {
+		slog.Info("manutenção concluída", "days_aggregated", r.AggregatedDays, "events_deleted", r.DeletedEvents,
+			"links_purged", r.Purged.Links, "marketplaces_purged", r.Purged.Marketplaces, "channels_purged", r.Purged.Channels,
+			"duration", time.Since(start).String())
 	}
-	return m.ExpireTrash(ctx)
+	return r, true, err
 }

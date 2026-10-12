@@ -17,6 +17,10 @@ type Metrics struct {
 	Written     prometheus.Counter
 	WriteErrors prometheus.Counter
 	QueueLength prometheus.Gauge
+	// Manutenção diária (consolidação, limpeza e lixeira).
+	MaintenanceDuration    prometheus.Gauge
+	MaintenanceFailures    prometheus.Counter
+	MaintenanceLastSuccess prometheus.Gauge
 }
 
 func New() *Metrics {
@@ -27,8 +31,12 @@ func New() *Metrics {
 		Written:     prometheus.NewCounter(prometheus.CounterOpts{Name: "hublinks_events_written_total", Help: "Eventos gravados no banco."}),
 		WriteErrors: prometheus.NewCounter(prometheus.CounterOpts{Name: "hublinks_events_write_errors_total", Help: "Lotes que falharam após todas as tentativas."}),
 		QueueLength: prometheus.NewGauge(prometheus.GaugeOpts{Name: "hublinks_event_queue_length", Help: "Eventos aguardando gravação."}),
+
+		MaintenanceDuration:    prometheus.NewGauge(prometheus.GaugeOpts{Name: "hublinks_maintenance_duration_seconds", Help: "Duração da última manutenção diária."}),
+		MaintenanceFailures:    prometheus.NewCounter(prometheus.CounterOpts{Name: "hublinks_maintenance_failures_total", Help: "Manutenções diárias que falharam."}),
+		MaintenanceLastSuccess: prometheus.NewGauge(prometheus.GaugeOpts{Name: "hublinks_maintenance_last_success_timestamp_seconds", Help: "Instante da última manutenção bem-sucedida."}),
 	}
-	m.Registry.MustRegister(m.Enqueued, m.Dropped, m.Written, m.WriteErrors, m.QueueLength)
+	m.Registry.MustRegister(m.Enqueued, m.Dropped, m.Written, m.WriteErrors, m.QueueLength, m.MaintenanceDuration, m.MaintenanceFailures, m.MaintenanceLastSuccess)
 	return m
 }
 
