@@ -228,3 +228,13 @@ descartável fora do repositório.
   exclusivas e invalida caches) e acrescenta a limpeza de mídia órfã. `docs/operacao.md` ganha
   backup do volume de mídia, a migração de `visitor_seen` e as novas variáveis. A `docs/pendencias.md`
   registra as assunções desta fase.
+
+## R17. Organização nas rotas públicas
+
+- **Decision**: `/p/{slug}` e o beacon resolvem a organização pela **única organização da instalação**
+  (`SELECT id FROM organizations ORDER BY created_at LIMIT 1`, lida uma vez e guardada em memória).
+  Os códigos curtos continuam resolvendo a organização pelo próprio `short_codes`.
+- **Rationale**: o slug é único por organização (não globalmente) e esta fase tem uma só organização,
+  criada na partida. Evita inventar roteamento por domínio, que pertence à fase 5.
+- **Consequência**: com mais de uma organização (fases 4 e 5), `/p/{slug}` precisará do domínio ou de um
+  prefixo para identificar a organização; registrado como assunção em `docs/pendencias.md`.

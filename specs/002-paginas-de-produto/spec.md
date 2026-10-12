@@ -36,8 +36,10 @@ restaurar. A pré-visualização e a abertura do endereço público dependem da 
 1. **Given** um administrador autenticado com um link de afiliado ativo, **When** cadastra um produto, vincula o
    link e publica, **Then** o endereço público do produto responde com a página e o painel mostra o endereço
    amigável e o código curto para copiar.
+   (A resposta do endereço público é verificada junto com a História 2.)
 2. **Given** um produto em rascunho, **When** um visitante acessa seu endereço, **Then** recebe "não encontrado";
    **And** o administrador autenticado consegue ver a pré-visualização.
+   (Verificado junto com a História 2, que entrega a página pública e a pré-visualização.)
 3. **Given** um título sem hífen no endereço sugerido, **When** o administrador salva o produto, **Then** o
    endereço final contém ao menos um hífen e é único na organização; um endereço repetido é recusado com
    mensagem clara.

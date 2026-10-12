@@ -142,6 +142,7 @@ web/
 │   └── components/               galeria, acordeão de ficha, carrossel, barra fixa, editor de ficha
 └── static/js/product.js          beacon, "Mostrar todos", barra fixa
 deploy/                           volume hublinks-media, MEDIA_DIR, /data/media com dono nonroot
+scripts/                          seed-products.sh (1.000 produtos de teste); loadtest.sh adaptado à página
 docs/                             operacao.md (backup de mídia, migração de visitor_seen), pendencias.md,
                                   guia-de-estilo.md (componentes novos)
 ```
