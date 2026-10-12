@@ -63,8 +63,6 @@ da fase 2 não foi decidida.
 - **O `X-Forwarded-For` só é lido quando a conexão vem de `TRUSTED_PROXIES`**, também no limite de taxa e no
   bloqueio de login (antes eles ignoravam a lista).
 
-## 7. Validações que dependem de uma pessoa
+## 7. Validações que dependem de uma pessoa [CONCLUÍDO]
 
-Ver [`verificacao.md`](verificacao.md): passo 9 do `quickstart.md` em
-navegador, passo 3 cronometrado e o aceite dos checkpoints.
-
+Todas feitas pelo responsável (T104, passos 3 e 9 do `quickstart.md` e aceite dos checkpoints); ver [`verificacao.md`](verificacao.md).

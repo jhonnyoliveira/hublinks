@@ -647,7 +647,7 @@ contagens (idênticas); reexecutar (sem mudança); um link na lixeira há 31 dia
 - [X] T108 Auditar a privacidade: buscar por `RemoteAddr`, `X-Forwarded-For` e `SetCookie` em
   `internal/**` e confirmar que só ocorrem em `httpx/clientip.go` e `auth/session.go`; executar o
   passo 10 do `quickstart.md`.
-- [ ] T109 Executar `gofmt -l .`, `go vet ./...`, `go test ./...` e
+- [x] T109 Executar `gofmt -l .`, `go vet ./...`, `go test ./...` e
   `go test -race ./internal/events/... ./internal/redirect/... ./internal/auth/...
   ./internal/httpx/... ./internal/maintenance/... ./internal/metrics/...` com
   `TEST_DATABASE_URL` definida, e o `quickstart.md` completo. Confirmar que nenhum teste de

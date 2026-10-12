@@ -71,7 +71,7 @@ func TestDockerfileBuildAndFinalStages(t *testing.T) {
 
 func TestComposeServesAppAndDatabaseWithoutPublishingMetrics(t *testing.T) {
 	c := read(t, "../../deploy/docker-compose.yml")
-	for _, want := range []string{"dockerfile: deploy/Dockerfile", "context: ..", "env_file: .env", `"8080:8080"`, "condition: service_healthy", "postgres:16-alpine", "pg_isready", "hublinks-postgres:/var/lib/postgresql/data", `["CMD", "/hublinks", "healthcheck"]`} {
+	for _, want := range []string{"dockerfile: deploy/Dockerfile", "context: ..", "env_file: .env", `"8081:8081"`, "condition: service_healthy", "postgres:16-alpine", "pg_isready", "hublinks-postgres:/var/lib/postgresql/data", `[ "CMD", "/hublinks", "healthcheck" ]`} {
 		if !strings.Contains(c, want) {
 			t.Errorf("docker-compose.yml sem %q", want)
 		}
