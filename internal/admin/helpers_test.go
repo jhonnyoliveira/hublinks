@@ -13,12 +13,16 @@ import (
 	"github.com/hublinks/hublinks/internal/admin"
 	"github.com/hublinks/hublinks/internal/auth"
 	"github.com/hublinks/hublinks/internal/service"
+	"github.com/hublinks/hublinks/internal/stats"
 	"github.com/hublinks/hublinks/internal/store"
 	"github.com/hublinks/hublinks/internal/store/testdb"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type env struct {
 	c       admin.Catalog
+	dash    admin.Dashboard
+	pool    *pgxpool.Pool
 	session auth.Session
 }
 
@@ -30,7 +34,9 @@ func newEnv(t *testing.T) env {
 		t.Fatal(err)
 	}
 	svc := service.Catalog{Store: store.NewCatalog(p), BaseURL: "https://hub.example"}
-	return env{c: admin.Catalog{Service: svc, TrashRetentionDays: 30}, session: auth.Session{OrgID: org, CSRF: "csrf-token"}}
+	tz, _ := time.LoadLocation("America/Sao_Paulo")
+	st := stats.Service{Pool: p, TZ: tz}
+	return env{c: admin.Catalog{Service: svc, TrashRetentionDays: 30, Stats: st}, dash: admin.Dashboard{Stats: st}, pool: p, session: auth.Session{OrgID: org, CSRF: "csrf-token"}}
 }
 
 // req descreve uma requisição ao painel.

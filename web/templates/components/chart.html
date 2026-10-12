@@ -1,0 +1,6 @@
+{{/* chart: Label (nome acessível), Data (template.JS com days/clicks/unique) e Rows (tabela alternativa). O script chart.js desenha com uPlot; sem ele, a tabela continua disponível. */}}
+{{define "chart"}}<figure class="chart-box">
+<div class="chart" data-chart role="img" aria-label="{{.Label}}"></div>
+<script type="application/json" data-chart-data>{{.Data}}</script>
+<details class="chart-table"><summary>Ver dados em tabela</summary>{{template "table" (dict "Caption" .Label "Columns" (list "Dia" "Cliques" "Únicos") "Rows" .Rows "EmptyText" "Sem dados no período.")}}</details>
+</figure>{{end}}

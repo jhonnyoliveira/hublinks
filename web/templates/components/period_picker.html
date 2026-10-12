@@ -1,2 +1,2 @@
-{{/* period_picker: Items [{Href, Text, Current}]. Cada período é um link, sem JavaScript. */}}
-{{define "period_picker"}}<nav class="period-picker" aria-label="Período">{{range .Items}}<a href="{{.Href}}"{{if .Current}} aria-current="true"{{end}}>{{.Text}}</a>{{end}}</nav>{{end}}
+{{/* period_picker: Items [{Href, Text, Current}] e Target opcional. Cada período é um link comum; com Target, o HTMX troca só esse contêiner e atualiza a URL (hx-push-url). */}}
+{{define "period_picker"}}<nav class="period-picker" aria-label="Período">{{range .Items}}<a href="{{.Href}}"{{if $.Target}} hx-get="{{.Href}}" hx-target="{{$.Target}}" hx-swap="outerHTML" hx-push-url="true"{{end}}{{if .Current}} aria-current="true"{{end}}>{{.Text}}</a>{{end}}</nav>{{end}}

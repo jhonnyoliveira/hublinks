@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/netip"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -21,8 +22,19 @@ type Config struct {
 	MaintenanceAt                                                                                                                                        string
 }
 
+// Load lê a configuração de getenv, que não distingue variável vazia de não
+// definida. Use LoadEnv no processo real: METRICS_ADDR vazio desativa as métricas.
 func Load(getenv func(string) string) (Config, error) {
-	c := Config{HTTPAddr: value(getenv, "HTTP_ADDR", ":8080"), MetricsAddr: value(getenv, "METRICS_ADDR", ":9091"), AppEnv: value(getenv, "APP_ENV", "production"), OrgName: value(getenv, "ORG_NAME", "Minha organização"), LogLevel: value(getenv, "LOG_LEVEL", "info"), EventsRetentionDays: 395, BotEventsRetentionDays: 30, TrashRetentionDays: 30, BotDistinctCodes: 5, PublicRateLimit: 300, LoginMaxFailures: 5, EventQueueSize: 10000, EventBatchSize: 500, MaintenanceAt: value(getenv, "MAINTENANCE_AT", "00:30")}
+	return loadWith(getenv, func(k string) (string, bool) { v := getenv(k); return v, v != "" })
+}
+
+// LoadEnv lê o ambiente do processo (os.LookupEnv).
+func LoadEnv() (Config, error) {
+	return loadWith(os.Getenv, os.LookupEnv)
+}
+
+func loadWith(getenv func(string) string, lookup func(string) (string, bool)) (Config, error) {
+	c := Config{HTTPAddr: value(getenv, "HTTP_ADDR", ":8080"), MetricsAddr: metricsAddr(lookup), AppEnv: value(getenv, "APP_ENV", "production"), OrgName: value(getenv, "ORG_NAME", "Minha organização"), LogLevel: value(getenv, "LOG_LEVEL", "info"), EventsRetentionDays: 395, BotEventsRetentionDays: 30, TrashRetentionDays: 30, BotDistinctCodes: 5, PublicRateLimit: 300, LoginMaxFailures: 5, EventQueueSize: 10000, EventBatchSize: 500, MaintenanceAt: value(getenv, "MAINTENANCE_AT", "00:30")}
 	for _, pair := range []struct {
 		name string
 		dst  *string
@@ -82,6 +94,14 @@ func Load(getenv func(string) string) (Config, error) {
 		return c, fmt.Errorf("LOG_LEVEL inválido")
 	}
 	return c, nil
+}
+
+// metricsAddr: ausente = ":9091"; definida (mesmo vazia) = o valor, e vazio desativa.
+func metricsAddr(lookup func(string) (string, bool)) string {
+	if v, ok := lookup("METRICS_ADDR"); ok {
+		return strings.TrimSpace(v)
+	}
+	return ":9091"
 }
 func value(g func(string) string, key, fallback string) string {
 	if v := strings.TrimSpace(g(key)); v != "" {

@@ -266,3 +266,68 @@ func TestCrossOriginProtectionOnlyAppliesToAdminAndAPI(t *testing.T) {
 		t.Errorf("GET público cross-site: %d", code)
 	}
 }
+
+// TestUserStory2EndToEnd: acessos reais pelo mux completo viram eventos
+// assíncronos e aparecem na API e no painel (2 cliques/1 único com o mesmo UA,
+// novo único com outro UA, alcance por canal).
+func TestUserStory2EndToEnd(t *testing.T) {
+	a := newApp(t)
+	a.do(http.MethodPost, "/admin/marketplaces", true, url.Values{"name": {"Loja"}, "shorten_policy": {"shorten"}}, true)
+	w := a.do(http.MethodGet, "/admin/links/new", true, nil, false)
+	mpID := regexp.MustCompile(`<option value="([0-9a-f-]{36})">Loja</option>`).FindStringSubmatch(w.Body.String())[1]
+	a.do(http.MethodPost, "/admin/channels", true, url.Values{"name": {"WhatsApp"}, "segment": {"wapp"}}, true)
+	w = a.do(http.MethodPost, "/admin/links", true, url.Values{"title": {"Produto"}, "destination_url": {"https://example.com/p"}, "marketplace_id": {mpID}, "active": {"true"}}, false)
+	loc := w.Header().Get("Location")
+	w = a.do(http.MethodGet, loc, true, nil, false)
+	code := regexp.MustCompile(`https://hub\.example/([0-9a-z]{7})`).FindStringSubmatch(w.Body.String())[1]
+
+	hit := func(path, ua string) {
+		r := httptest.NewRequest(http.MethodGet, path, nil)
+		r.Header.Set("User-Agent", ua)
+		rec := httptest.NewRecorder()
+		a.h.ServeHTTP(rec, r)
+		if rec.Code != http.StatusFound {
+			t.Fatalf("%s: %d", path, rec.Code)
+		}
+	}
+	hit("/"+code, "Navegador A")
+	hit("/"+code, "Navegador A")
+	hit("/"+code, "Navegador B")
+	hit("/wapp/"+code, "Navegador A")
+
+	var raw map[string]any
+	deadline := time.Now().Add(3 * time.Second)
+	for {
+		w = a.do(http.MethodGet, "/api/v1/stats/summary?period=7d", true, nil, false)
+		if err := json.Unmarshal(w.Body.Bytes(), &raw); err != nil {
+			t.Fatal(err)
+		}
+		if raw["clicks"] == float64(4) || time.Now().After(deadline) {
+			break
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	if raw["clicks"] != float64(4) || raw["unique"] != float64(2) || raw["active_links"] != float64(1) {
+		t.Fatalf("summary = %v", raw)
+	}
+	w = a.do(http.MethodGet, "/api/v1/stats/channels?period=7d", true, nil, false)
+	// sem canal: 3 cliques e 2 únicos de URL; wapp: 1 clique e 1 único de URL
+	for _, want := range []string{`"segment":"wapp"`, `"clicks":3,"unique":2`, `"clicks":1,"unique":1`} {
+		if !strings.Contains(w.Body.String(), want) {
+			t.Fatalf("canais sem %s: %s", want, w.Body.String())
+		}
+	}
+	w = a.do(http.MethodGet, "/admin", true, nil, false)
+	if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), `<td class="num">4</td>`) || !strings.Contains(w.Body.String(), "data-chart-data") {
+		t.Fatalf("dashboard: %d\n%s", w.Code, w.Body.String())
+	}
+	// a listagem recebe os contadores (regressão: Stats precisa estar ligado ao Catalog)
+	w = a.do(http.MethodGet, "/admin/links", true, nil, false)
+	if !strings.Contains(w.Body.String(), `<td class="num">4</td><td class="num hide-sm">2</td>`) {
+		t.Fatalf("listagem sem contadores:\n%s", w.Body.String())
+	}
+	w = a.do(http.MethodGet, loc, true, nil, false)
+	if !strings.Contains(w.Body.String(), "Por canal") || !strings.Contains(w.Body.String(), "https://hub.example/wapp/"+code) {
+		t.Fatalf("detalhe sem estatísticas:\n%s", w.Body.String())
+	}
+}

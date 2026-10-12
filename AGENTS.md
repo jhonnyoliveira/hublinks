@@ -13,16 +13,18 @@ O repositório já contém a aplicação Go, a fundação de configuração, ban
 
 A fundação (T001–T032) foi auditada contra a descrição de cada tarefa e a **User Story 1** (T033–T052) está implementada, testada e **aceita no checkpoint**: os cenários 1–5 da spec e os passos 1, 3, 6, 9 e 10 do `quickstart.md` foram exercitados contra o servidor real (curl e Chromium headless). Ficaram de fora, por dependerem de outras histórias, o deploy por compose (US7), a contagem de cliques e a resiliência do worker (US2), a prévia de crawler (US3) e a agregação/limpeza (US6).
 
-O próximo trabalho é a **User Story 2 — Ver cliques totais e únicos** (T053 em diante). Siga a ordem do `tasks.md`; o ponto de extensão `redirect.Recorder` e o `EventRecorder` já existem, mas a gravação em lote, as flags de unicidade e as estatísticas ainda precisam ser verificadas contra a descrição de cada tarefa antes de serem marcadas.
+A **User Story 2 — Ver cliques totais e únicos** (T053–T069) está implementada e testada: fila e worker de eventos (lotes, retentativas, reinício após pânico, drenagem no desligamento), flags de unicidade, estatísticas por link/canal/dia (`internal/stats`), rotas `/api/v1/stats/*`, dashboard com gráfico (uPlot), estatísticas nas telas de links e servidor de métricas em `METRICS_ADDR`. Os cenários da spec foram exercitados contra o servidor real (curl): 2 cliques/1 único com o mesmo UA, novo único com outro UA e alcance por canal. O gráfico (`web/static/js/chart.js`) **ainda não foi verificado em navegador**; só passou por `node --check`. Falta o aceite do checkpoint da US2 pelo responsável.
+
+O próximo trabalho é a **User Story 3 — prévia de crawler** (T070 em diante). Siga a ordem do `tasks.md`; o `redirect.IsCrawler` e a página `public/preview` já existem e precisam ser verificados contra a descrição de cada tarefa antes de serem marcados.
 
 Pontos de atenção:
 
 - **Testes de integração** exigem `TEST_DATABASE_URL`; sem ela, são pulados em silêncio. Use `make test-ci`, que falha se houver testes pulados. Detalhes e comandos em `docs/desenvolvimento.md`.
 - **CSS:** a fonte única é `web/static/css/base.css`; `make css` gera o build do Tailwind com hash. Arquivos de template não podem começar com `_` (o `go:embed` os ignora).
 - **JavaScript do painel** (HTMX, Alpine, modal, tema) é verificado em Chromium headless com Playwright fora do repositório; ainda não há suíte de navegador versionada.
-- **Métricas:** `METRICS_ADDR` é lido, mas ainda não há servidor de métricas; o contrato diz que valor vazio desativa, o que o carregador atual não distingue de "não definido". Resolver junto da métrica de eventos descartados.
+- **Métricas:** `METRICS_ADDR` (padrão `:9091`; vazio desativa) serve `/metrics` em porta separada. O processo usa `config.LoadEnv`, que distingue vazio de não definido; `config.Load` (testes) não distingue.
 - **Verificação de origem** (`http.CrossOriginProtection` e `RequireCSRF`) compara `Origin` com o `Host` da requisição: o proxy reverso do deploy precisa preservá-lo.
-- **Fila de eventos:** `server.New` inicia o worker com `context.Background()`, então os eventos pendentes não são descarregados no desligamento. Tratar na User Story 2.
+- **Fila de eventos:** `server.Build(ctx, …)` inicia o worker com o contexto do processo; `Run` espera `App.Drained` antes de fechar o pool. `server.New` (testes) não tem ciclo de vida.
 
 - Implemente somente o trabalho solicitado, em incrementos entregáveis. Criar este arquivo não autoriza iniciar a aplicação.
 - Siga a sequência da seção 13 do escopo: fundação; modelo e CRUD; redirecionamento; eventos; bots e preview; estatísticas e retenção; painel; endurecimento.

@@ -1,0 +1,5 @@
+{{/* period_custom: período personalizado. Recebe o periodView (Target, From, To) e a Action. */}}
+{{define "period_custom"}}<form class="period-custom" method="get" action="{{.Action}}"{{if .Period.Target}} hx-get="{{.Action}}" hx-target="{{.Period.Target}}" hx-swap="outerHTML" hx-push-url="true"{{end}}>
+<div class="field"><label for="p-from">De</label><input id="p-from" type="date" name="from" value="{{.Period.From}}" required></div>
+<div class="field"><label for="p-to">Até</label><input id="p-to" type="date" name="to" value="{{.Period.To}}" required></div>
+<button class="btn btn-sm">Aplicar</button></form>{{end}}

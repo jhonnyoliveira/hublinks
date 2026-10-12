@@ -2,6 +2,8 @@ package admin
 
 import (
 	"errors"
+	"html/template"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strings"
@@ -9,12 +11,25 @@ import (
 	"github.com/google/uuid"
 	"github.com/hublinks/hublinks/internal/domain"
 	"github.com/hublinks/hublinks/internal/service"
+	"github.com/hublinks/hublinks/internal/stats"
 	webtmpl "github.com/hublinks/hublinks/web"
 )
 
+// linkRow é uma linha da listagem: o link e seus contadores no período.
+// Clicks e Unique são nil para links não rastreáveis (nunca zero).
+type linkRow struct {
+	service.LinkView
+	HasStats bool
+	Clicks   *int
+	Unique   *int
+	History  *stats.Counts
+}
+
 type linkList struct {
 	CSRF          string
-	Items         []service.LinkView
+	Items         []linkRow
+	Period        periodView
+	StatsError    bool
 	Marketplaces  []domain.Marketplace
 	Q             string
 	MarketplaceID string
@@ -35,6 +50,25 @@ type linkShow struct {
 	CSRF  string
 	Link  service.LinkView
 	Flash string
+	// Estatísticas do período (nil quando indisponíveis).
+	Stats      *linkStats
+	StatsError bool
+	Period     periodView
+}
+
+// linkStats é o detalhe de cliques do link para a tela.
+type linkStats struct {
+	Trackable bool
+	Totals    *stats.Counts
+	History   *stats.Counts
+	Channels  []channelRow
+	Chart     template.JS
+	DayRows   [][]string
+}
+
+type channelRow struct {
+	Name, URL      string
+	Clicks, Unique int
 }
 
 type linkDelete struct {
@@ -70,9 +104,44 @@ func (c Catalog) linkListData(r *http.Request) (linkList, error) {
 	if data.Marketplaces, err = c.Service.Store.ListMarketplaces(r.Context(), s.OrgID); err != nil {
 		return data, err
 	}
-	data.Items = items
+	var p stats.Period
+	p, data.Period = resolvePeriod(c.Stats, q, "/admin/links", "#links-list")
+	data.Items, data.StatsError = c.rows(r, s.OrgID, p, items)
 	data.Pager = newPager("/admin/links", q, page, total, "#links-list")
 	return data, nil
+}
+
+// rows junta os contadores do período às linhas. Sem estatísticas (pool nulo ou
+// erro de consulta) as linhas seguem sem contadores e o erro é sinalizado.
+func (c Catalog) rows(r *http.Request, org uuid.UUID, p stats.Period, items []service.LinkView) ([]linkRow, bool) {
+	rows := make([]linkRow, len(items))
+	for i, v := range items {
+		rows[i].LinkView = v
+	}
+	if c.Stats.Pool == nil || len(items) == 0 {
+		return rows, false
+	}
+	ids := make([]uuid.UUID, len(items))
+	for i, v := range items {
+		ids[i] = v.ID
+	}
+	totals, err := c.Stats.Totals(r.Context(), org, p, ids)
+	if err != nil {
+		slog.Error("falha ao consultar cliques dos links", "error", err)
+		return rows, true
+	}
+	for i := range rows {
+		rows[i].HasStats = true
+		t := totals[rows[i].ID]
+		if rows[i].Trackable {
+			clicks, unique := t.Clicks, t.Unique
+			rows[i].Clicks, rows[i].Unique = &clicks, &unique
+		} else if t.Clicks > 0 {
+			h := t
+			rows[i].History = &h
+		}
+	}
+	return rows, false
 }
 
 func (c Catalog) Links(w http.ResponseWriter, r *http.Request) {
@@ -263,7 +332,21 @@ func (c Catalog) LinkShow(w http.ResponseWriter, r *http.Request) {
 		c.linkError(w, r, err)
 		return
 	}
-	renderPage(w, http.StatusOK, linkShow{CSRF: s.CSRF, Link: v, Flash: flashes[r.URL.Query().Get("ok")]}, "admin/links/show.html")
+	data := linkShow{CSRF: s.CSRF, Link: v, Flash: flashes[r.URL.Query().Get("ok")]}
+	var p stats.Period
+	p, data.Period = resolvePeriod(c.Stats, r.URL.Query(), "/admin/links/"+v.ID.String(), "#link-stats")
+	if c.Stats.Pool != nil {
+		if data.Stats, err = c.linkStats(r, s.OrgID, v, p); err != nil {
+			slog.Error("falha ao consultar estatísticas do link", "error", err)
+			data.StatsError = true
+		}
+	}
+	if isHX(r) && r.Header.Get("HX-Target") == "link-stats" {
+		w.Header().Set("Vary", "HX-Request")
+		renderFragment(w, "link_stats", data, "admin/links/show.html")
+		return
+	}
+	renderPage(w, http.StatusOK, data, "admin/links/show.html")
 }
 
 // LinkToggle liga ou desliga o link (valor explícito em "active", para a ação
@@ -294,7 +377,10 @@ func (c Catalog) LinkToggle(w http.ResponseWriter, r *http.Request) {
 		msg = "Link ativado."
 	}
 	trigger(w, msg, "success", false)
-	render(w, http.StatusOK, "", "admin/links", "link_row", v)
+	// A linha volta com os contadores do período que o usuário está vendo.
+	p, _ := resolvePeriod(c.Stats, currentQuery(r), "/admin/links", "")
+	rows, _ := c.rows(r, s.OrgID, p, []service.LinkView{v})
+	render(w, http.StatusOK, "", "admin/links", "link_row", rows[0])
 }
 
 func (c Catalog) LinkConfirmDelete(w http.ResponseWriter, r *http.Request) {
@@ -362,4 +448,31 @@ func (c Catalog) LinkDelete(w http.ResponseWriter, r *http.Request) {
 	swapInto(w, "#links-list")
 	trigger(w, "Link enviado para a lixeira.", "success", true)
 	render(w, http.StatusOK, "", "admin/links", "links_list", data)
+}
+
+// linkStats monta o detalhe de cliques: totais, tabela por canal (com a URL de
+// cada um) e a série diária.
+func (c Catalog) linkStats(r *http.Request, org uuid.UUID, v service.LinkView, p stats.Period) (*linkStats, error) {
+	d, err := c.Stats.Link(r.Context(), org, v.ID, p)
+	if err != nil {
+		return nil, err
+	}
+	urls := map[uuid.UUID]string{}
+	short := ""
+	for _, u := range v.URLs {
+		if u.Channel != nil {
+			urls[u.Channel.ID] = u.URL
+		} else if u.Label == "curta" {
+			short = u.URL
+		}
+	}
+	out := &linkStats{Trackable: d.Link.Trackable, Totals: d.Totals, History: d.History, Chart: chartData(d.Daily), DayRows: dayRows(d.Daily)}
+	for _, ch := range d.ByChannel {
+		row := channelRow{Name: "URL curta (sem canal)", URL: short, Clicks: ch.Clicks, Unique: ch.Unique}
+		if ch.Channel != nil {
+			row.Name, row.URL = ch.Channel.Name, urls[ch.Channel.ID]
+		}
+		out.Channels = append(out.Channels, row)
+	}
+	return out, nil
 }

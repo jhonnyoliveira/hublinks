@@ -93,10 +93,3 @@ func Logout(m auth.Manager) http.HandlerFunc {
 		http.Redirect(w, r, "/admin/login", http.StatusSeeOther)
 	}
 }
-func Dashboard(w http.ResponseWriter, r *http.Request) {
-	s, _ := auth.FromContext(r.Context())
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := webtmpl.Render(w, "admin", "admin/dashboard", struct{ CSRF string }{s.CSRF}); err != nil {
-		http.Error(w, "erro ao renderizar página", http.StatusInternalServerError)
-	}
-}

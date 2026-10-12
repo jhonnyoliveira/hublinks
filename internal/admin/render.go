@@ -146,3 +146,5 @@ func session(r *http.Request) auth.Session {
 	s, _ := auth.FromContext(r.Context())
 	return s
 }
+
+func webNum(n int) string { return webtmpl.Num(n) }

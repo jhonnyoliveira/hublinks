@@ -1,8 +1,31 @@
-{{define "head"}}<title>Painel | Hub Links</title>{{end}}
-{{define "content"}}<h1>Painel</h1>
-<p class="muted">Cadastre marketplaces, canais e links. As estatísticas são atualizadas de forma assíncrona.</p>
-<div class="cards-grid">
-{{template "card" (dict "Title" "Marketplaces" "Text" "Lojas de origem dos links e a política padrão de cada uma." "Href" "/admin/marketplaces" "Action" "Gerenciar marketplaces")}}
-{{template "card" (dict "Title" "Canais" "Text" "WhatsApp, Telegram e outros: cada canal gera uma URL por link." "Href" "/admin/channels" "Action" "Gerenciar canais")}}
-{{template "card" (dict "Title" "Links" "Text" "Cadastre links, copie as URLs e acompanhe o que está ativo." "Href" "/admin/links" "Action" "Gerenciar links")}}
+{{define "head"}}<title>Painel | Hub Links</title>
+<link rel="stylesheet" href="/static/vendor/uPlot.min.css"><script src="/static/vendor/uplot.iife.min.js" defer></script><script src="/static/js/chart.js" defer></script>{{end}}
+{{define "content"}}<div class="page-head"><h1>Painel</h1></div>
+{{template "dashboard_body" .}}{{end}}
+{{define "dashboard_body"}}<div id="dashboard">
+<div class="period-bar">{{template "period_picker" .Period}}{{template "period_custom" (dict "Period" .Period "Action" "/admin")}}</div>
+<p class="muted period-label">{{.Period.Label}}</p>
+{{if .Period.Error}}<p class="alert" role="status">{{.Period.Error}}</p>{{end}}
+{{if .Error}}<p class="alert alert-danger" role="alert">{{.Error}}</p>{{else}}
+<div class="stats-grid">
+{{template "stat" (dict "Title" "Cliques" "Value" (num .Summary.Clicks) "Hint" "Acessos reais, sem robôs.")}}
+{{template "stat" (dict "Title" "Visitantes únicos" "Value" (num .Summary.Unique) "Hint" "Alcance por link, somado.")}}
+{{template "stat" (dict "Title" "Links ativos" "Value" (num .Summary.ActiveLinks) "Hint" "Cadastrados e ativos agora.")}}
+</div>
+<h2 class="section-title">Cliques por dia</h2>
+<div class="card card-pad">{{template "chart" (dict "Label" "Cliques e visitantes únicos por dia" "Data" .Chart "Rows" .DayRows)}}</div>
+<div class="two-col">
+<section><h2 class="section-title">Links mais clicados</h2>
+{{if .Summary.TopLinks}}<div class="table-wrap"><table><caption class="sr-only">Cinco links com mais cliques no período</caption>
+<thead><tr><th scope="col">Link</th><th scope="col" class="num">Cliques</th><th scope="col" class="num">Únicos</th></tr></thead>
+<tbody>{{range .Summary.TopLinks}}<tr><td><a href="/admin/links/{{.Link.ID}}">{{.Link.Title}}</a></td><td class="num">{{num .Clicks}}</td><td class="num">{{num .Unique}}</td></tr>{{end}}</tbody></table></div>
+{{else}}{{template "empty_state" (dict "Icon" "link" "Text" "Ainda não há cliques neste período.")}}{{end}}</section>
+<section><h2 class="section-title">Canais</h2>
+{{if .Channels}}<div class="table-wrap"><table><caption class="sr-only">Cliques por canal no período</caption>
+<thead><tr><th scope="col">Canal</th><th scope="col" class="num">Cliques</th><th scope="col" class="num">Únicos</th></tr></thead>
+<tbody>{{range .Channels}}<tr><td>{{if .Channel}}{{.Channel.Name}}{{else}}URL curta (sem canal){{end}}</td><td class="num">{{num .Clicks}}</td><td class="num">{{num .Unique}}</td></tr>{{end}}</tbody></table></div>
+{{else}}{{template "empty_state" (dict "Icon" "megaphone" "Text" "Nenhum canal cadastrado.")}}{{end}}</section>
+</div>
+<aside class="alert alert-info limits" aria-label="Sobre a contagem de únicos"><strong>Como os únicos são contados.</strong> O visitante é identificado por um código gerado a partir do IP (IPv6 pelo /64) e do navegador, sem cookies. Quem troca de rede ou de navegador conta de novo, e quem compartilha rede e navegador conta uma vez só. A contagem de único é permanente: o mesmo visitante nunca volta a ser único. Por link, o alcance considera todos os canais; na comparação entre canais, cada canal conta os seus próprios visitantes, então a soma dos canais pode superar o alcance do link. Links no modo “direto” não são rastreáveis.</aside>
+{{end}}
 </div>{{end}}

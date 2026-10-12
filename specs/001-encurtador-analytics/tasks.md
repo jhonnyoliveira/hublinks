@@ -322,27 +322,27 @@ em `/api/v1/stats/*`.
 
 ### Tests for User Story 2
 
-- [ ] T053 [P] [US2] Testes unitários em `internal/events/visitor_test.go`:
+- [X] T053 [P] [US2] Testes unitários em `internal/events/visitor_test.go`:
   `VisitorID(pepper, ip, ua)` é determinístico, retorna 32 bytes, muda com o UA e coincide para
   IPv6 do mesmo `/64`.
-- [ ] T054 [P] [US2] Testes em `internal/events/queue_test.go`, executados com `-race`:
+- [X] T054 [P] [US2] Testes em `internal/events/queue_test.go`, executados com `-race`:
   - `Enqueue` nunca bloqueia;
   - com a fila cheia, descarta e incrementa `hublinks_events_dropped_total`;
   - worker parado ou em pânico não afeta o `Enqueue`;
   - o flush acontece a cada `EVENT_BATCH_SIZE` ou `EVENT_FLUSH_INTERVAL`;
   - o shutdown drena a fila.
-- [ ] T055 [P] [US2] Testes de integração em `internal/events/writer_test.go`:
+- [X] T055 [P] [US2] Testes de integração em `internal/events/writer_test.go`:
   - sem canal e com canal: `is_unique_url` e `is_unique_target` corretos;
   - visitante via `wapp` e depois pela URL curta → `is_unique_url=true` e
     `is_unique_target=false` (R5);
   - 20 goroutines gravando o mesmo visitante e alvo → exatamente 1 único (`-race`);
   - evento `is_bot` não insere em `visitor_seen` e grava as flags `false`.
-- [ ] T056 [P] [US2] Testes HTTP em `internal/redirect/record_test.go`:
+- [X] T056 [P] [US2] Testes HTTP em `internal/redirect/record_test.go`:
   - acesso real a link `shorten` enfileira um evento com `occurred_at`, `channel_id`, `referer`
     (truncado em 1024) e `user_agent` (truncado em 512);
   - link `direct` não enfileira nada;
   - com o worker parado, continua `302`.
-- [ ] T057 [P] [US2] Testes de integração em `internal/stats/stats_test.go`:
+- [X] T057 [P] [US2] Testes de integração em `internal/stats/stats_test.go`:
   - semeia `click_events` e `click_daily`;
   - períodos `7d`/`30d`/`90d`/personalizado; `from > to` ou mais de 366 dias → erro;
   - o dia corrente em `REPORT_TZ` vem de `click_events`, e os dias fechados de `click_daily`;
@@ -351,7 +351,7 @@ em `/api/v1/stats/*`.
   - link `direct` → `trackable:false`, contadores `null` e `history` preservado;
   - acesso às 23h30 de Brasília conta no próprio dia;
   - todas as consultas restritas à org.
-- [ ] T058 [P] [US2] Testes HTTP em `internal/api/stats_test.go` para `GET /stats/links`,
+- [X] T058 [P] [US2] Testes HTTP em `internal/api/stats_test.go` para `GET /stats/links`,
   `/stats/links/{id}`, `/stats/channels` e `/stats/summary`, no formato de
   `contracts/api-v1.md`.
 
@@ -369,7 +369,7 @@ em `/api/v1/stats/*`.
   - `aggregated_days(org_id, day, aggregated_at, PK(org_id, day))`.
 - [X] T060 [P] [US2] Implementar `internal/events/visitor.go`:
   `VisitorID = HMAC-SHA256(PEPPER, ip_norm + "|" + ua)`, usando `httpx.Normalize`.
-- [ ] T061 [P] [US2] Implementar `internal/metrics/metrics.go` com o registro Prometheus e os
+- [X] T061 [P] [US2] Implementar `internal/metrics/metrics.go` com o registro Prometheus e os
   contadores e histogramas de R15: `hublinks_events_enqueued_total`,
   `hublinks_events_dropped_total`, `hublinks_events_written_total`,
   `hublinks_events_write_errors_total` e `hublinks_event_queue_length`.
@@ -382,28 +382,28 @@ em `/api/v1/stats/*`.
   `INSERT INTO visitor_seen … ON CONFLICT DO NOTHING RETURNING`, uma vez com `scope='url'`
   (canal ou o UUID nulo) e outra com `scope='target'` (UUID nulo), define as flags e grava o lote
   com `CopyFrom` em `click_events`. Robôs gravam direto, sem `visitor_seen`.
-- [ ] T064 [US2] Implementar `internal/redirect/record.go` (o `Recorder` real):
+- [X] T064 [US2] Implementar `internal/redirect/record.go` (o `Recorder` real):
   - monta o evento (`occurred_at` = agora em UTC, `visitor_id`, canal, referer e UA truncados);
   - enfileira só para a política efetiva `shorten`;
   - liga o worker em `internal/server/server.go`.
-- [ ] T065 [US2] Implementar `internal/stats/period.go` (parse de `period`/`from`/`to` em
+- [X] T065 [US2] Implementar `internal/stats/period.go` (parse de `period`/`from`/`to` em
   `REPORT_TZ`, com limite de 366 dias) e `internal/stats/stats.go` (consultas da união
   `click_daily` + dia corrente de `click_events`), com `orgID` obrigatório.
-- [ ] T066 [US2] Implementar `internal/api/stats.go`, com as quatro rotas de estatística de
+- [X] T066 [US2] Implementar `internal/api/stats.go`, com as quatro rotas de estatística de
   `contracts/api-v1.md`.
-- [ ] T067 [US2] Implementar o dashboard em `internal/admin/dashboard.go` e
+- [X] T067 [US2] Implementar o dashboard em `internal/admin/dashboard.go` e
   `web/templates/admin/dashboard.html`:
   - cartões de cliques, únicos e links ativos;
   - série diária em uPlot (script carregado só nesta tela e no detalhe);
   - top 5 links, comparação entre canais e seletor de período com `hx-push-url`;
   - aviso das limitações da contagem de únicos (FR-026).
-- [ ] T068 [US2] Acrescentar estatísticas às telas de links:
+- [X] T068 [US2] Acrescentar estatísticas às telas de links:
   - cliques e únicos na listagem (`web/templates/admin/links/index.html`);
   - tabela por canal e série diária no detalhe (`web/templates/admin/links/show.html`);
   - seletor de período;
   - link `direct` com o selo "não rastreável" e nunca zero, mostrando o histórico anterior
     quando houver.
-- [ ] T069 [US2] Expor as métricas em um servidor separado em `METRICS_ADDR` (vazio desativa) no
+- [X] T069 [US2] Expor as métricas em um servidor separado em `METRICS_ADDR` (vazio desativa) no
   `internal/server/server.go`.
 
 **Checkpoint**: Histórias 1 e 2 completas; o passo 4 do `quickstart.md` funciona.

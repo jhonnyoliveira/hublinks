@@ -146,3 +146,26 @@ func TestConfigNeverPrintsSecrets(t *testing.T) {
 		t.Fatal("valores não secretos devem aparecer")
 	}
 }
+
+func TestMetricsAddrEmptyDisablesButUnsetUsesDefault(t *testing.T) {
+	env := baseEnv()
+	lookup := func(set bool, value string) func(string) (string, bool) {
+		return func(k string) (string, bool) {
+			if k == "METRICS_ADDR" {
+				return value, set
+			}
+			v, ok := env[k]
+			return v, ok
+		}
+	}
+	get := func(k string) string { return env[k] }
+	for _, c := range []struct {
+		set         bool
+		value, want string
+	}{{false, "", ":9091"}, {true, "", ""}, {true, "  ", ""}, {true, "127.0.0.1:9100", "127.0.0.1:9100"}} {
+		cfg, err := loadWith(get, lookup(c.set, c.value))
+		if err != nil || cfg.MetricsAddr != c.want {
+			t.Fatalf("set=%v %q: MetricsAddr=%q err=%v", c.set, c.value, cfg.MetricsAddr, err)
+		}
+	}
+}

@@ -5,14 +5,10 @@ import (
 	"errors"
 	"github.com/google/uuid"
 	"github.com/hublinks/hublinks/internal/domain"
-	"github.com/hublinks/hublinks/internal/events"
-	"github.com/hublinks/hublinks/internal/httpx"
 	webtmpl "github.com/hublinks/hublinks/web"
 	"log/slog"
 	"net/http"
-	"net/netip"
 	"strings"
-	"time"
 )
 
 type Handler struct {
@@ -28,27 +24,6 @@ type Handler struct {
 // bloquear nem falhar o redirecionamento (FR-012).
 type Recorder interface {
 	Record(r *http.Request, link domain.AffiliateLink, code, channelID string)
-}
-
-// EventRecorder enfileira o evento de clique de links rastreáveis, classificando
-// bots; a gravação em lote é assíncrona (events.Queue).
-type EventRecorder struct {
-	Queue          *events.Queue
-	Pepper         string
-	TrustedProxies []netip.Prefix
-	Bots           *BotDetector
-}
-
-func (e EventRecorder) Record(r *http.Request, l domain.AffiliateLink, code, channel string) {
-	if !l.Trackable() || e.Queue == nil {
-		return
-	}
-	ip := httpx.ClientIP(r, e.TrustedProxies)
-	bot := false
-	if e.Bots != nil {
-		bot = e.Bots.Bot(string(httpx.Key(e.Pepper, ip)), code, time.Now())
-	}
-	e.Queue.Enqueue(events.Event{OccurredAt: time.Now().UTC(), OrgID: l.OrgID.String(), TargetID: l.ID.String(), ChannelID: channel, Code: code, VisitorID: events.VisitorID(e.Pepper, ip, r.UserAgent()), Referer: cut(r.Referer(), 1024), UserAgent: cut(r.UserAgent(), 512), IsBot: bot})
 }
 
 type Catalog interface {
@@ -122,10 +97,4 @@ func (h *Handler) preview(w http.ResponseWriter, r *http.Request, l domain.Affil
 	if err := webtmpl.Render(w, "public", "public/preview", data); err != nil {
 		http.Error(w, "erro ao renderizar página", http.StatusInternalServerError)
 	}
-}
-func cut(s string, n int) string {
-	if len(s) > n {
-		return s[:n]
-	}
-	return s
 }

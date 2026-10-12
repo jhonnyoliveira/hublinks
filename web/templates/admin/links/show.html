@@ -1,4 +1,5 @@
-{{define "head"}}<title>{{.Link.Title}} | Hub Links</title>{{end}}
+{{define "head"}}<title>{{.Link.Title}} | Hub Links</title>
+<link rel="stylesheet" href="/static/vendor/uPlot.min.css"><script src="/static/vendor/uplot.iife.min.js" defer></script><script src="/static/js/chart.js" defer></script>{{end}}
 {{define "content"}}
 {{if .Flash}}<div hidden x-data x-init="$nextTick(() => $dispatch('toast', {message: $el.dataset.message}))" data-message="{{.Flash}}"></div>{{end}}
 <div class="page-head"><h1>{{.Link.Title}}</h1><span><a class="btn" href="/admin/links/{{.Link.ID}}/edit">{{icon "pencil"}} Editar</a> <button class="btn btn-danger" hx-get="/admin/links/{{.Link.ID}}/delete" hx-target="#modal-body" hx-swap="innerHTML">{{icon "trash-2"}} Excluir</button></span></div>
@@ -18,4 +19,32 @@
 <code>{{.URL}}</code>
 <button type="button" class="btn btn-sm" x-data="copy" @click="run()" data-copy="{{.URL}}" aria-label="Copiar URL{{if .Channel}} de {{.Channel.Name}}{{end}}"><span x-show="!copied">{{icon "copy"}} Copiar</span><span x-show="copied" x-cloak>{{icon "check"}} Copiado!</span></button>
 </div>{{end}}</div>
+{{template "link_stats" .}}
 {{end}}
+{{define "link_stats"}}<div id="link-stats">
+<h2 class="section-title">Cliques</h2>
+<div class="period-bar">{{template "period_picker" .Period}}{{template "period_custom" (dict "Period" .Period "Action" (printf "/admin/links/%s" .Link.ID))}}</div>
+<p class="muted period-label">{{.Period.Label}}</p>
+{{if .Period.Error}}<p class="alert" role="status">{{.Period.Error}}</p>{{end}}
+{{if .StatsError}}<p class="alert alert-danger" role="alert">Não foi possível carregar as estatísticas agora.</p>
+{{else if .Stats}}
+{{if .Stats.Trackable}}
+<div class="stats-grid">
+{{template "stat" (dict "Title" "Cliques" "Value" (num .Stats.Totals.Clicks) "Hint" "Acessos reais, sem robôs.")}}
+{{template "stat" (dict "Title" "Visitantes únicos" "Value" (num .Stats.Totals.Unique) "Hint" "Alcance do link, em todos os canais.")}}
+</div>
+{{else}}
+<div class="card card-pad"><p><span class="badge badge-warn">Não rastreável</span> Este link usa a política “direto”: os cliques atuais não são contados.</p>{{if .Stats.History}}<p class="muted">Histórico de quando o link era encurtado, neste período: {{num .Stats.History.Clicks}} cliques e {{num .Stats.History.Unique}} únicos.</p>{{end}}</div>
+{{end}}
+{{if or .Stats.Trackable .Stats.History}}
+<h3 class="section-title">Cliques por dia</h3>
+<div class="card card-pad">{{template "chart" (dict "Label" "Cliques e visitantes únicos por dia" "Data" .Stats.Chart "Rows" .Stats.DayRows)}}</div>
+<h3 class="section-title">Por canal</h3>
+{{if .Stats.Channels}}<div class="table-wrap"><table><caption class="sr-only">Cliques por canal no período</caption>
+<thead><tr><th scope="col">Canal</th><th scope="col" class="hide-sm">URL</th><th scope="col" class="num">Cliques</th><th scope="col" class="num">Únicos</th></tr></thead>
+<tbody>{{range .Stats.Channels}}<tr><td>{{.Name}}</td><td class="hide-sm"><code>{{.URL}}</code></td><td class="num">{{num .Clicks}}</td><td class="num">{{num .Unique}}</td></tr>{{end}}</tbody></table></div>
+<p class="muted history-note">Em cada canal, “únicos” conta os visitantes daquela URL. O alcance do link (acima) conta cada visitante uma vez, em todos os canais.</p>
+{{else}}{{template "empty_state" (dict "Icon" "link" "Text" "Ainda não há cliques neste período.")}}{{end}}
+{{end}}
+{{end}}
+</div>{{end}}

@@ -8,6 +8,7 @@ import (
 	"html/template"
 	"io"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 )
@@ -22,8 +23,37 @@ var funcs = template.FuncMap{
 		}
 		return out
 	},
+	"list":  func(values ...any) []any { return values },
 	"asset": Asset,
 	"icon":  Icon,
+	"num":   Num,
+}
+
+// Num formata um inteiro com separador de milhar em pt-BR (1.234). Aceita int e
+// *int; nil vira "—", para contadores de links não rastreáveis nunca virarem 0.
+func Num(v any) string {
+	var n int
+	switch x := v.(type) {
+	case int:
+		n = x
+	case *int:
+		if x == nil {
+			return "—"
+		}
+		n = *x
+	default:
+		return fmt.Sprint(v)
+	}
+	s := strconv.Itoa(n)
+	neg := strings.HasPrefix(s, "-")
+	s = strings.TrimPrefix(s, "-")
+	for i := len(s) - 3; i > 0; i -= 3 {
+		s = s[:i] + "." + s[i:]
+	}
+	if neg {
+		s = "-" + s
+	}
+	return s
 }
 
 // fallbackAssets são usados quando o build do CSS ainda não rodou (sem

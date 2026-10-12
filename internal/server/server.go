@@ -11,6 +11,7 @@ import (
 	"github.com/hublinks/hublinks/internal/events"
 	"github.com/hublinks/hublinks/internal/httpx"
 	"github.com/hublinks/hublinks/internal/maintenance"
+	"github.com/hublinks/hublinks/internal/metrics"
 	"github.com/hublinks/hublinks/internal/redirect"
 	"github.com/hublinks/hublinks/internal/service"
 	"github.com/hublinks/hublinks/internal/stats"
@@ -25,7 +26,21 @@ import (
 	"time"
 )
 
+// New monta o handler sem ciclo de vida: o worker de eventos só para com o
+// processo. Use Build quando for preciso drená-lo no desligamento.
 func New(pool *pgxpool.Pool, c config.Config) http.Handler {
+	return Build(context.Background(), pool, c).Handler
+}
+
+// App é o servidor montado: o handler HTTP, as métricas e um canal fechado
+// quando o worker de eventos termina de drenar a fila (depois que ctx cancela).
+type App struct {
+	Handler http.Handler
+	Metrics *metrics.Metrics
+	Drained <-chan struct{}
+}
+
+func Build(ctx context.Context, pool *pgxpool.Pool, c config.Config) App {
 	mux := http.NewServeMux()
 	mux.Handle("GET /healthz", httpx.Health(pool))
 	mux.Handle("GET /static/", assets.Handler())
@@ -35,13 +50,14 @@ func New(pool *pgxpool.Pool, c config.Config) http.Handler {
 	mux.Handle("GET /admin/login", login)
 	mux.Handle("POST /admin/login", login)
 	mux.Handle("POST /admin/logout", sessions.Require(auth.RequireCSRF(admin.Logout(sessions)), false))
-	mux.Handle("GET /admin", sessions.Require(http.HandlerFunc(admin.Dashboard), false))
+	statsService := stats.Service{Pool: pool, TZ: c.ReportTZ}
+	mux.Handle("GET /admin", sessions.Require(http.HandlerFunc(admin.Dashboard{Stats: statsService}.Show), false))
 	if c.AppEnv == "development" {
 		mux.Handle("GET /admin/ui", sessions.Require(http.HandlerFunc(admin.UI), false))
 	}
 	resolutionCache := redirect.NewCache()
 	catalogService := service.Catalog{Store: store.NewCatalog(pool), Cache: resolutionCache, BaseURL: c.BaseURL}
-	adminCatalog := admin.Catalog{Service: catalogService, TrashRetentionDays: c.TrashRetentionDays}
+	adminCatalog := admin.Catalog{Service: catalogService, TrashRetentionDays: c.TrashRetentionDays, Stats: statsService}
 	// view exige sessão; write exige sessão e token CSRF (e origem igual ao site).
 	view := func(h http.HandlerFunc) http.Handler { return sessions.Require(h, false) }
 	write := func(h http.HandlerFunc) http.Handler { return sessions.Require(auth.RequireCSRF(h), false) }
@@ -91,20 +107,37 @@ func New(pool *pgxpool.Pool, c config.Config) http.Handler {
 	mux.Handle("DELETE /api/v1/affiliate-links/{id}", sessions.Require(auth.RequireCSRF(http.HandlerFunc(catalogAPI.LinkItem)), true))
 	mux.Handle("PATCH /api/v1/affiliate-links/{id}", sessions.Require(auth.RequireCSRF(http.HandlerFunc(catalogAPI.LinkItem)), true))
 	mux.Handle("POST /api/v1/affiliate-links/{id}/restore", sessions.Require(auth.RequireCSRF(http.HandlerFunc(catalogAPI.LinkRestore)), true))
-	mux.Handle("GET /api/v1/stats/summary", sessions.Require(http.HandlerFunc(api.Stats{Service: stats.Service{Pool: pool, TZ: c.ReportTZ}}.Summary), true))
+	statsAPI := api.Stats{Service: statsService, BaseURL: c.BaseURL}
+	mux.Handle("GET /api/v1/stats/summary", sessions.Require(http.HandlerFunc(statsAPI.Summary), true))
+	mux.Handle("GET /api/v1/stats/links", sessions.Require(http.HandlerFunc(statsAPI.Links), true))
+	mux.Handle("GET /api/v1/stats/links/{id}", sessions.Require(http.HandlerFunc(statsAPI.Link), true))
+	mux.Handle("GET /api/v1/stats/channels", sessions.Require(http.HandlerFunc(statsAPI.Channels), true))
 	// Caminhos desconhecidos sob /admin/ e /api/v1/ nunca chegam ao redirecionamento
 	// público: exigem sessão e respondem "não encontrado" no formato da área.
 	mux.Handle("GET /admin/", sessions.Require(http.NotFoundHandler(), false))
 	mux.Handle("GET /api/v1/", sessions.Require(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		httpx.APIError(w, http.StatusNotFound, "not_found", "não encontrado", nil)
 	}), true))
-	queue := events.NewQueue(c.EventQueueSize, c.EventBatchSize, c.EventFlushInterval, events.DBWriter{Pool: pool})
-	go queue.Run(context.Background())
+	m := metrics.New()
+	queue := events.NewQueue(c.EventQueueSize, c.EventBatchSize, c.EventFlushInterval, events.DBWriter{Pool: pool}, m)
+	drained := make(chan struct{})
+	go func() {
+		defer close(drained)
+		queue.Run(ctx)
+	}()
 	recorder := redirect.EventRecorder{Queue: queue, Pepper: c.Pepper, TrustedProxies: c.TrustedProxies, Bots: redirect.NewBotDetector(c.BotDistinctCodes, c.BotWindow)}
 	public := &redirect.Handler{Catalog: store.NewCatalog(pool), Cache: resolutionCache, BaseURL: c.BaseURL, Recorder: recorder}
 	mux.Handle("GET /", httpx.NewRateLimiter(c.Pepper, c.PublicRateLimit).Middleware(public))
 	logger := newLogger(c.LogLevel)
-	return httpx.Recover(httpx.Log(crossOrigin(mux), logger), logger)
+	return App{Handler: httpx.Recover(httpx.Log(crossOrigin(mux), logger), logger), Metrics: m, Drained: drained}
+}
+
+// MetricsHandler serve /metrics (formato Prometheus) em porta separada da
+// aplicação pública: as métricas nunca ficam expostas pelo proxy do site.
+func MetricsHandler(m *metrics.Metrics) http.Handler {
+	mux := http.NewServeMux()
+	mux.Handle("GET /metrics", m.Handler())
+	return mux
 }
 
 func newLogger(level string) *slog.Logger {
@@ -150,11 +183,26 @@ func Run(ctx context.Context, c config.Config) error {
 	if err != nil {
 		return err
 	}
-	return serve(ctx, ln, &http.Server{
-		Handler:           New(pool, c),
+	app := Build(ctx, pool, c)
+	if c.MetricsAddr != "" {
+		mln, merr := net.Listen("tcp", c.MetricsAddr)
+		if merr != nil {
+			return merr
+		}
+		go func() {
+			if merr := serve(ctx, mln, &http.Server{Handler: MetricsHandler(app.Metrics), ReadHeaderTimeout: 10 * time.Second}, 5*time.Second); merr != nil {
+				slog.Error("servidor de métricas encerrou com erro", "error", merr)
+			}
+		}()
+	}
+	err = serve(ctx, ln, &http.Server{
+		Handler:           app.Handler,
 		ReadHeaderTimeout: 10 * time.Second,
 		IdleTimeout:       2 * time.Minute,
 	}, 15*time.Second)
+	// O pool só fecha (defer acima) depois que o worker gravar o que restou.
+	<-app.Drained
+	return err
 }
 
 // serve atende até o contexto ser cancelado e então encerra com Shutdown,

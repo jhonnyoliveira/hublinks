@@ -2,6 +2,7 @@ package web
 
 import (
 	"bytes"
+	"html/template"
 	"strings"
 	"testing"
 )
@@ -16,7 +17,7 @@ func page(t *testing.T, layout, view string, data any) string {
 }
 
 func TestAdminLayoutForSignedInUser(t *testing.T) {
-	out := page(t, "admin", "admin/dashboard", struct{ CSRF string }{"tok123"})
+	out := page(t, "admin", "admin/dashboard", dashboardData("tok123"))
 	has(t, out,
 		`<html lang="pt-BR">`, `hx-headers=`, `X-CSRF-Token`, `tok123`, `class="skip-link" href="#conteudo"`, `id="conteudo"`,
 		// menu lateral e recolhível no celular
@@ -77,4 +78,28 @@ func TestComponentGuideRenders(t *testing.T) {
 	}
 	out := page(t, "admin", "admin/ui", data)
 	has(t, out, "Guia de componentes", "Botões e selos", "Campo", "Estados", "Tabela e cartão", "Abas e período")
+}
+
+// dashboardData reproduz o formato do painel (admin.dashboardData) sem importar o pacote admin.
+func dashboardData(csrf string) any {
+	type item struct {
+		Href, Text string
+		Current    bool
+	}
+	return struct {
+		CSRF   string
+		Period struct {
+			Items                          []item
+			Target, Label, Error, From, To string
+			Hidden                         []struct{ Name, Value string }
+		}
+		Summary struct {
+			Clicks, Unique, ActiveLinks int
+			TopLinks                    []struct{}
+		}
+		Channels []struct{}
+		Chart    template.JS
+		DayRows  [][]string
+		Error    string
+	}{CSRF: csrf}
 }

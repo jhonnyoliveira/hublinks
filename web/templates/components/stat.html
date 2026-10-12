@@ -1,0 +1,2 @@
+{{/* stat: Title, Value (texto já formatado), Hint opcional. Cartão de indicador. */}}
+{{define "stat"}}<section class="card card-pad stat"><h2 class="stat-title">{{.Title}}</h2><p class="stat-value">{{.Value}}</p>{{if .Hint}}<p class="stat-hint muted">{{.Hint}}</p>{{end}}</section>{{end}}

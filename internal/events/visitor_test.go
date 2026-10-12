@@ -12,6 +12,9 @@ func TestVisitorID(t *testing.T) {
 	if len(a) != 32 || string(a) != string(b) {
 		t.Fatal("IPv6 /64 deveria coincidir")
 	}
+	if string(a) != string(VisitorID(pepper, netip.MustParseAddr("2001:db8::1"), "ua")) {
+		t.Fatal("o hash deveria ser determinístico")
+	}
 	if string(a) == string(VisitorID(pepper, netip.MustParseAddr("2001:db8::2"), "outro")) {
 		t.Fatal("UA deveria alterar o hash")
 	}

@@ -21,7 +21,7 @@ func main() {
 		fmt.Fprintln(os.Stderr, "uso: hublinks [serve|migrate|maintenance]")
 		os.Exit(2)
 	}
-	c, err := config.Load(os.Getenv)
+	c, err := config.LoadEnv()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
