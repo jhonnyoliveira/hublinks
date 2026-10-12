@@ -625,7 +625,7 @@ contagens (idênticas); reexecutar (sem mudança); um link na lixeira há 31 dia
 - [X] T103 [US7] Escrever o `README.md` na raiz: requisitos, desenvolvimento no devcontainer
   (`make css`, `make run`, `make test` com `TEST_DATABASE_URL`), deploy pelo compose e a tabela
   de variáveis (link para `specs/001-encurtador-analytics/contracts/config.md`).
-- [ ] T104 [US7] Validar o build da imagem e a subida pelo compose, conforme o passo 2 do
+- [x] T104 [US7] Validar o build da imagem e a subida pelo compose, conforme o passo 2 do
   `quickstart.md`, registrando o resultado no PR.
 
 **Checkpoint**: História 7 completa.

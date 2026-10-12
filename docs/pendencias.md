@@ -65,6 +65,6 @@ da fase 2 não foi decidida.
 
 ## 7. Validações que dependem de uma pessoa
 
-Ver [`verificacao.md`](verificacao.md): `docker build`/`compose up` (T104), passo 9 do `quickstart.md` em
+Ver [`verificacao.md`](verificacao.md): passo 9 do `quickstart.md` em
 navegador, passo 3 cronometrado e o aceite dos checkpoints.
 
