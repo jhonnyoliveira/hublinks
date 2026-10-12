@@ -634,17 +634,17 @@ contagens (idênticas); reexecutar (sem mudança); um link na lixeira há 31 dia
 
 ## Phase 10: Polish & Cross-Cutting Concerns (épico 8 — endurecimento)
 
-- [ ] T105 [P] Completar as métricas HTTP em `internal/httpx/metrics.go`: requisições por rota e
+- [X] T105 [P] Completar as métricas HTTP em `internal/httpx/metrics.go`: requisições por rota e
   status e histograma `hublinks_redirect_duration_seconds`.
-- [ ] T106 [P] Criar o teste de carga do redirecionamento em `scripts/loadtest.sh` (`vegeta`
+- [X] T106 [P] Criar o teste de carga do redirecionamento em `scripts/loadtest.sh` (`vegeta`
   contra `/{code}` em cache, 500 req/s por 60 s) e registrar em `docs/operacao.md` o p95 medido
   no servidor (meta < 50 ms, SC-003). Registrar também, a partir de
   `hublinks_events_enqueued_total` e `hublinks_events_dropped_total`, a taxa de descarte durante
   a carga, e verificar que fica abaixo de 0,1% (SC-011).
-- [ ] T107 [P] Escrever `docs/operacao.md`: variáveis, backup do banco, cuidado com `PEPPER` e
+- [X] T107 [P] Escrever `docs/operacao.md`: variáveis, backup do banco, cuidado com `PEPPER` e
   `REPORT_TZ`, jobs de manutenção, métricas e alertas sugeridos (descartes, falhas de job) e
   carga.
-- [ ] T108 Auditar a privacidade: buscar por `RemoteAddr`, `X-Forwarded-For` e `SetCookie` em
+- [X] T108 Auditar a privacidade: buscar por `RemoteAddr`, `X-Forwarded-For` e `SetCookie` em
   `internal/**` e confirmar que só ocorrem em `httpx/clientip.go` e `auth/session.go`; executar o
   passo 10 do `quickstart.md`.
 - [ ] T109 Executar `gofmt -l .`, `go vet ./...`, `go test ./...` e
@@ -655,7 +655,7 @@ contagens (idênticas); reexecutar (sem mudança); um link na lixeira há 31 dia
   retornar vazio). Registrar no PR o resultado do passo 9 do `quickstart.md` (375 px, dois
   temas, teclado e contraste conferido no DevTools) e o tempo cronometrado do passo 3, com meta
   abaixo de 3 min (SC-001, SC-009).
-- [ ] T110 Atualizar a seção "Momento atual e próximo trabalho" do `AGENTS.md` e as pendências
+- [X] T110 Atualizar a seção "Momento atual e próximo trabalho" do `AGENTS.md` e as pendências
   ainda abertas em `docs/pendencias.md`.
 
 ---

@@ -47,3 +47,24 @@ O escopo prevê um "esqueleto na fase 1", mas nenhum requisito da fase 1 usa pro
 
 A fase 1 segue a proposta do escopo: nenhuma métrica, apenas a marca "não rastreável". A métrica
 da fase 2 não foi decidida.
+
+## 6. Assunções da implementação [ASSUNÇÃO — aguardam confirmação]
+
+- **Limite de taxa em janela deslizante.** O T089 sugeria `x/time/rate` com rajada de 60, mas o T086 e o
+  FR-034 exigem que as 300 primeiras requisições do minuto passem. Foi usada uma janela deslizante aproximada;
+  depois de esgotar a cota de uma vez, a espera pode chegar a 60 s.
+- **`maintenance run --day` recusa dias já consolidados e fora da retenção de eventos** (`ErrDayCleaned`),
+  porque refazer `click_daily` a partir de eventos já removidos zeraria o histórico.
+- **Totais do dashboard incluem o histórico de links hoje `direct`** (cliques reais de quando eram rastreáveis);
+  o ranking de top links mostra só links rastreáveis. Ligado à questão aberta 5.
+- **Login bloqueado responde `429`** com `Retry-After` e a mensagem com o prazo (a spec fala em "recusada").
+- **`unsaved.js` sem Alpine**, por delegação de eventos, porque o script carrega depois de o Alpine iniciar.
+- **Dias com eventos só de robôs também são marcados em `aggregated_days`**, para a limpeza poder removê-los.
+- **O `X-Forwarded-For` só é lido quando a conexão vem de `TRUSTED_PROXIES`**, também no limite de taxa e no
+  bloqueio de login (antes eles ignoravam a lista).
+
+## 7. Validações que dependem de uma pessoa
+
+Ver [`verificacao.md`](verificacao.md): `docker build`/`compose up` (T104), passo 9 do `quickstart.md` em
+navegador, passo 3 cronometrado e o aceite dos checkpoints.
+

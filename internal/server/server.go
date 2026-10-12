@@ -131,7 +131,7 @@ func Build(ctx context.Context, pool *pgxpool.Pool, c config.Config) App {
 	public := &redirect.Handler{Catalog: store.NewCatalog(pool), Cache: resolutionCache, BaseURL: c.BaseURL, Recorder: recorder}
 	mux.Handle("GET /", httpx.NewRateLimiter(c.Pepper, c.PublicRateLimit).WithTrustedProxies(c.TrustedProxies).Middleware(public))
 	logger := newLogger(c.LogLevel)
-	return App{Handler: httpx.Recover(httpx.Log(crossOrigin(mux), logger), logger), Metrics: m, Cache: resolutionCache, Drained: drained}
+	return App{Handler: httpx.Instrument(httpx.Recover(httpx.Log(crossOrigin(mux), logger), logger), m), Metrics: m, Cache: resolutionCache, Drained: drained}
 }
 
 // MetricsHandler serve /metrics (formato Prometheus) em porta separada da
