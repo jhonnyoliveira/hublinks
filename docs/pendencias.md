@@ -49,7 +49,9 @@ Decisão do responsável (2026-10-12): links `direct` ficam **sem métrica**, ap
 na fase 2. Sem redirecionar o visitante, não há como medir o acesso. Isso dispensa a proposta do escopo de usar a
 `view` da página do produto como métrica parcial (`docs/referencias/escopo.md`, questão 3, que não foi alterado).
 
-## 6. Assunções da implementação [ASSUNÇÃO — aguardam confirmação]
+## 6. Assunções da implementação [CONFIRMADO]
+
+Confirmadas pelo responsável em 2026-10-12.
 
 - **Limite de taxa em janela deslizante.** O T089 sugeria `x/time/rate` com rajada de 60, mas o T086 e o
   FR-034 exigem que as 300 primeiras requisições do minuto passem. Foi usada uma janela deslizante aproximada;
