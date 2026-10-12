@@ -29,7 +29,7 @@ A **User Story 7 — subir o serviço com um comando** (T100–T103) foi auditad
 
 A **Fase 10 — endurecimento** (T105–T108 e T110) está concluída: métricas HTTP por rota (padrão do mux) e status e o histograma `hublinks_redirect_duration_seconds`; `scripts/loadtest.sh` executado de verdade (500 req/s por 60 s: p95 de 0,88 ms no cliente e ≤ 0,5 ms no servidor, 0 eventos descartados); `docs/operacao.md` completo (variáveis, backup, `PEPPER`/`REPORT_TZ`, jobs, métricas e alertas, carga); e a auditoria de privacidade, agora automatizada em `internal/audit` (IP e cookies só nos arquivos permitidos, nenhuma coluna de IP, nenhum IP em logs).
 
-**Falta** o T109 completo, que depende de uma pessoa (o passo 9 já foi validado): o passo 3 cronometrado e o aceite dos checkpoints das histórias 2 a 7. O registro está em `docs/verificacao.md`; as assunções que pedem confirmação, em `docs/pendencias.md` (itens 6 e 7). A fase 2 só começa após o aceite da fase 1.
+**Falta** o T109 completo, que depende de uma pessoa (os passos 3 e 9 já foram validados): o aceite dos checkpoints das histórias 2 a 7. O registro está em `docs/verificacao.md`; as assunções que pedem confirmação, em `docs/pendencias.md` (itens 6 e 7). A fase 2 só começa após o aceite da fase 1.
 
 Pontos de atenção:
 
