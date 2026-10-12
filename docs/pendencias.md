@@ -43,10 +43,11 @@ O escopo prevê um "esqueleto na fase 1", mas nenhum requisito da fase 1 usa pro
 **Decisão (2026-10-08, aprovada pelo responsável):** criar a tabela por migração na fase 2. Na fase 1, `target_type` aceita apenas
 `affiliate_link`.
 
-## 5. Questão em aberto 3 do escopo: métrica de links `direct` [ABERTA]
+## 5. Questão em aberto 3 do escopo: métrica de links `direct` [DECIDIDO]
 
-A fase 1 segue a proposta do escopo: nenhuma métrica, apenas a marca "não rastreável". A métrica
-da fase 2 não foi decidida.
+Decisão do responsável (2026-10-12): links `direct` ficam **sem métrica**, apenas com a marca "não rastreável", também
+na fase 2. Sem redirecionar o visitante, não há como medir o acesso. Isso dispensa a proposta do escopo de usar a
+`view` da página do produto como métrica parcial (`docs/referencias/escopo.md`, questão 3, que não foi alterado).
 
 ## 6. Assunções da implementação [ASSUNÇÃO — aguardam confirmação]
 
@@ -56,7 +57,8 @@ da fase 2 não foi decidida.
 - **`maintenance run --day` recusa dias já consolidados e fora da retenção de eventos** (`ErrDayCleaned`),
   porque refazer `click_daily` a partir de eventos já removidos zeraria o histórico.
 - **Totais do dashboard incluem o histórico de links hoje `direct`** (cliques reais de quando eram rastreáveis);
-  o ranking de top links mostra só links rastreáveis. Ligado à questão aberta 5.
+  o ranking de top links mostra só links rastreáveis. Ligado à decisão do item 5 (sem métrica para `direct`); o
+  histórico antigo é a única contagem que esses links exibem.
 - **Login bloqueado responde `429`** com `Retry-After` e a mensagem com o prazo (a spec fala em "recusada").
 - **`unsaved.js` sem Alpine**, por delegação de eventos, porque o script carrega depois de o Alpine iniciar.
 - **Dias com eventos só de robôs também são marcados em `aggregated_days`**, para a limpeza poder removê-los.

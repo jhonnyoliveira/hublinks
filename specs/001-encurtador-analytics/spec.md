@@ -280,7 +280,7 @@ verificar a saúde do serviço.
 
 - Uso inicial por um único administrador e uma única organização; multiusuário, papéis, site público, produtos, categorias e domínio customizado estão fora desta fase.
 - Fora de escopo permanente: integração com APIs de marketplaces, conversões/comissões, preço e alertas, ranking/pontuação, avaliações e veredito.
-- **[ASSUNÇÃO]** Links `direct`: na fase 1 não há métrica alguma, apenas a marca "não rastreável"; a métrica futura (visualização da página de produto) depende de confirmação do responsável (questão em aberto 3 do escopo) e não é decidida aqui.
+- **[ASSUNÇÃO]** Links `direct`: não há métrica alguma, apenas a marca "não rastreável". O responsável decidiu (2026-10-12, questão em aberto 3 do escopo) que isso vale também nas fases seguintes: sem redirecionar, não há como medir.
 - **[ASSUNÇÃO]** Domínio curto ainda não existe; em desenvolvimento usa-se `localhost` e a URL base é configurável.
 - Contagem de únicos é uma estimativa consistente para comparar canais, não precisão científica (aceito conscientemente).
 - Retenção padrão: eventos reais 395 dias, robôs 30 dias, consolidados indefinidamente, registros de unicidade enquanto o alvo existir; prazos configuráveis.

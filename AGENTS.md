@@ -29,7 +29,7 @@ A **User Story 7 — subir o serviço com um comando** (T100–T103) foi auditad
 
 A **Fase 10 — endurecimento** (T105–T108 e T110) está concluída: métricas HTTP por rota (padrão do mux) e status e o histograma `hublinks_redirect_duration_seconds`; `scripts/loadtest.sh` executado de verdade (500 req/s por 60 s: p95 de 0,88 ms no cliente e ≤ 0,5 ms no servidor, 0 eventos descartados); `docs/operacao.md` completo (variáveis, backup, `PEPPER`/`REPORT_TZ`, jobs, métricas e alertas, carga); e a auditoria de privacidade, agora automatizada em `internal/audit` (IP e cookies só nos arquivos permitidos, nenhuma coluna de IP, nenhum IP em logs).
 
-**A fase 1 está concluída e aceita** (T104 e T109 incluídos; checkpoints das histórias 2 a 7 aceitos em 2026-10-12). O registro está em `docs/verificacao.md`; as assunções que ainda pedem confirmação, em `docs/pendencias.md` (itens 5 e 6). A fase 2 só começa com instrução explícita do responsável.
+**A fase 1 está concluída e aceita** (T104 e T109 incluídos; checkpoints das histórias 2 a 7 aceitos em 2026-10-12). O registro está em `docs/verificacao.md`; as assunções que ainda pedem confirmação, em `docs/pendencias.md` (item 6). A fase 2 só começa com instrução explícita do responsável.
 
 Pontos de atenção:
 
@@ -61,7 +61,7 @@ Pontos de atenção:
 - Código curto: exatamente sete caracteres `[0-9a-z]`, único globalmente. Segmentos de canal são únicos por organização e respeitam as palavras reservadas da seção 6.
 - Gravação de eventos é assíncrona, em fila de memória e lotes. Fila cheia ou falha do worker não pode bloquear o redirecionamento; descarte deve ser contabilizado em métrica.
 - Crawlers conhecidos recebem preview Open Graph sem gerar eventos. Eventos classificados como bots não entram nas estatísticas.
-- Política `direct` exibe a URL original e a indicação **“não rastreável”**, nunca zero cliques. Não decida a métrica futura desses links sem confirmação da questão em aberto.
+- Política `direct` exibe a URL original e a indicação **“não rastreável”**, nunca zero cliques. O responsável decidiu que esses links não terão métrica, também nas fases seguintes: não crie contador nem proxy de acesso para eles.
 - Unicidade é permanente por alvo e por alvo/canal; preserve a distinção entre `is_unique_target` e `is_unique_url`. O worker calcula as flags ao inserir, com tratamento de concorrência.
 - Agregação diária deve ser idempotente. Só remova eventos de dias já agregados; preserve contagens após a limpeza. Retenções padrão: eventos reais 395 dias, bots 30 dias, agregados indefinidamente e `visitor_seen` enquanto o alvo existir.
 
