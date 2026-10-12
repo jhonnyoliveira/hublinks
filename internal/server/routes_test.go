@@ -28,7 +28,9 @@ type app struct {
 	baseURL string
 }
 
-func newApp(t *testing.T) *app {
+func newApp(t *testing.T) *app { return newAppWithEnv(t, "test") }
+
+func newAppWithEnv(t *testing.T, appEnv string) *app {
 	t.Helper()
 	pool := testdb.New(t)
 	ctx := context.Background()
@@ -44,7 +46,7 @@ func newApp(t *testing.T) *app {
 		t.Fatal(err)
 	}
 	cfg := config.Config{
-		BaseURL: "https://hub.example", Pepper: "pepper-de-teste-com-32-caracteres!", AppEnv: "test",
+		BaseURL: "https://hub.example", Pepper: "pepper-de-teste-com-32-caracteres!", AppEnv: appEnv,
 		ReportTZ: time.UTC, TrashRetentionDays: 30, PublicRateLimit: 1000,
 		LoginMaxFailures: 5, LoginWindow: time.Minute, LoginLockout: time.Minute,
 		EventQueueSize: 100, EventBatchSize: 10, EventFlushInterval: 50 * time.Millisecond,
@@ -318,12 +320,12 @@ func TestUserStory2EndToEnd(t *testing.T) {
 		}
 	}
 	w = a.do(http.MethodGet, "/admin", true, nil, false)
-	if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), `<td class="num">4</td>`) || !strings.Contains(w.Body.String(), "data-chart-data") {
+	if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), `<td class="num" data-label="Cliques">4</td>`) || !strings.Contains(w.Body.String(), "data-chart-data") {
 		t.Fatalf("dashboard: %d\n%s", w.Code, w.Body.String())
 	}
 	// a listagem recebe os contadores (regressão: Stats precisa estar ligado ao Catalog)
 	w = a.do(http.MethodGet, "/admin/links", true, nil, false)
-	if !strings.Contains(w.Body.String(), `<td class="num">4</td><td class="num hide-sm">2</td>`) {
+	if !strings.Contains(w.Body.String(), `<td class="num" data-label="Cliques">4</td><td class="num hide-sm" data-label="Únicos">2</td>`) {
 		t.Fatalf("listagem sem contadores:\n%s", w.Body.String())
 	}
 	w = a.do(http.MethodGet, loc, true, nil, false)
@@ -369,6 +371,19 @@ func TestUserStory3EndToEnd(t *testing.T) {
 		rec := get(path, "Mozilla/5.0")
 		if !strings.Contains(rec.Body.String(), `id="privacy-notice"`) || rec.Header().Get("Set-Cookie") != "" {
 			t.Fatalf("%s sem aviso de privacidade ou com cookie", path)
+		}
+	}
+}
+
+// /admin/ui (guia de componentes) só existe em APP_ENV=development.
+func TestComponentGuideOnlyInDevelopment(t *testing.T) {
+	for env, want := range map[string]int{"test": http.StatusNotFound, "production": http.StatusNotFound, "development": http.StatusOK} {
+		a := newAppWithEnv(t, env)
+		if w := a.do(http.MethodGet, "/admin/ui", true, nil, false); w.Code != want {
+			t.Errorf("APP_ENV=%s: /admin/ui = %d, esperado %d", env, w.Code, want)
+		}
+		if w := a.do(http.MethodGet, "/admin/ui", false, nil, false); w.Code != http.StatusSeeOther {
+			t.Errorf("APP_ENV=%s: sem sessão = %d, esperado redirecionamento ao login", env, w.Code)
 		}
 	}
 }

@@ -5,8 +5,8 @@
 <script src="/static/vendor/htmx.min.js" defer></script><script src="/static/js/panel.js" defer></script><script src="/static/vendor/alpine.min.js" defer></script>{{template "head" .}}</head>
 <body{{if .CSRF}} hx-headers='{{printf "{\"X-CSRF-Token\":%q}" .CSRF}}'{{end}}>
 <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
-{{if .CSRF}}<div class="shell" x-data="{menu: false}" @keydown.escape.window="menu = false">
-<header class="mobilebar"><button type="button" class="btn btn-ghost btn-icon" aria-label="Abrir menu" aria-controls="sidebar" :aria-expanded="menu" @click="menu = !menu">{{icon "menu"}}</button><a class="brand" href="/admin">Hub Links</a>{{template "theme_toggle" "icon"}}</header>
+{{if .CSRF}}<div class="shell" x-data="{menu: false}" @keydown.escape.window="if (menu) { menu = false; $refs.menuBtn.focus() }">
+<header class="mobilebar"><button type="button" class="btn btn-ghost btn-icon" aria-label="Abrir menu" aria-controls="sidebar" :aria-expanded="menu" x-ref="menuBtn" @click="menu = !menu; if (menu) $nextTick(() => document.querySelector('#sidebar nav a').focus())">{{icon "menu"}}</button><a class="brand" href="/admin">Hub Links</a>{{template "theme_toggle" "icon"}}</header>
 <div class="scrim" x-show="menu" x-cloak @click="menu = false" aria-hidden="true"></div>
 <aside id="sidebar" class="sidebar" :class="{'is-open': menu}" aria-label="Barra lateral">
   <a class="brand" href="/admin">{{icon "link"}} Hub Links</a>

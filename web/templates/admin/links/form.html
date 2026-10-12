@@ -1,7 +1,7 @@
 {{define "head"}}<title>{{if .ID}}Editar link{{else}}Novo link{{end}} | Hub Links</title>{{end}}
 {{define "content"}}
 <div class="page-head"><h1>{{if .ID}}Editar link{{else}}Novo link{{end}}</h1><a class="btn" href="{{if .ID}}/admin/links/{{.ID}}{{else}}/admin/links{{end}}">Cancelar</a></div>
-<form class="card" style="padding:1rem" method="post" action="{{if .ID}}/admin/links/{{.ID}}{{else}}/admin/links{{end}}" data-unsaved="false" novalidate>
+<form class="card card-pad" method="post" action="{{if .ID}}/admin/links/{{.ID}}{{else}}/admin/links{{end}}" data-unsaved="false" novalidate>
   <input type="hidden" name="csrf_token" value="{{.CSRF}}">
   {{if .Error}}<p class="alert alert-danger" role="alert">{{.Error}}</p>{{end}}
   {{template "field" (dict "ID" "title" "Name" "title" "Label" "Título" "Value" .Title "Required" true "MaxLength" 200 "Error" (index .Errors "title") "Autofocus" true)}}

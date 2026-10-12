@@ -4,7 +4,7 @@
 {{if .Period.Error}}<p class="alert" role="status">{{.Period.Error}}</p>{{end}}
 {{if .StatsError}}<p class="alert alert-danger" role="alert">Não foi possível carregar os cliques agora.</p>{{end}}
 <div id="period-state" hidden>{{range .Period.Hidden}}<input type="hidden" name="{{.Name}}" value="{{.Value}}">{{end}}</div>
-{{if .Items}}<div class="table-wrap"><table>
+{{if .Items}}<div class="table-wrap"><table class="table-cards">
 <caption class="sr-only">Lista de links</caption>
 <thead><tr><th scope="col">Título</th><th scope="col" class="hide-sm">Marketplace</th><th scope="col" class="hide-sm">Política</th><th scope="col" class="num">Cliques</th><th scope="col" class="num hide-sm">Únicos</th><th scope="col">Ativo</th><th scope="col"><span class="sr-only">Ações</span></th></tr></thead>
 <tbody>{{range .Items}}{{template "link_row" .}}{{end}}</tbody></table>{{template "pager" .Pager}}</div>
@@ -12,9 +12,9 @@
 </div>{{end}}
 {{define "link_row"}}<tr id="link-{{.ID}}">
 <td><a href="/admin/links/{{.ID}}">{{.Title}}</a>{{if not .Active}} <span class="badge badge-inactive">Inativo</span>{{end}}</td>
-<td class="hide-sm">{{.Marketplace.Name}}</td>
-<td class="hide-sm">{{template "policy_badge" .EffectivePolicy}}</td>
-{{if not .HasStats}}<td class="num">—</td><td class="num hide-sm">—</td>{{else if .Trackable}}<td class="num">{{num .Clicks}}</td><td class="num hide-sm">{{num .Unique}}</td>{{else}}<td class="num"><span class="badge badge-warn">Não rastreável</span>{{if .History}}<br><span class="history-note">histórico: {{num .History.Clicks}} cliques</span>{{end}}</td><td class="num hide-sm">—</td>{{end}}
-<td><button type="button" class="switch" role="switch" aria-checked="{{.Active}}" aria-label="Ativo: {{.Title}}" hx-post="/admin/links/{{.ID}}/toggle" hx-vals='{"active":"{{if .Active}}false{{else}}true{{end}}"}' hx-target="closest tr" hx-swap="outerHTML"><span class="track" aria-hidden="true"></span></button></td>
+<td class="hide-sm" data-label="Marketplace">{{.Marketplace.Name}}</td>
+<td class="hide-sm" data-label="Política">{{template "policy_badge" .EffectivePolicy}}</td>
+{{if not .HasStats}}<td class="num" data-label="Cliques">—</td><td class="num hide-sm" data-label="Únicos">—</td>{{else if .Trackable}}<td class="num" data-label="Cliques">{{num .Clicks}}</td><td class="num hide-sm" data-label="Únicos">{{num .Unique}}</td>{{else}}<td class="num" data-label="Cliques"><span class="badge badge-warn">Não rastreável</span>{{if .History}}<br><span class="history-note">histórico: {{num .History.Clicks}} cliques</span>{{end}}</td><td class="num hide-sm" data-label="Únicos">—</td>{{end}}
+<td data-label="Ativo"><button type="button" class="switch" role="switch" aria-checked="{{.Active}}" aria-label="Ativo: {{.Title}}" hx-post="/admin/links/{{.ID}}/toggle" hx-vals='{"active":"{{if .Active}}false{{else}}true{{end}}"}' hx-target="closest tr" hx-swap="outerHTML"><span class="track" aria-hidden="true"></span></button></td>
 <td class="actions"><a class="btn btn-sm" href="/admin/links/{{.ID}}">{{icon "external-link"}} Ver</a> <button class="btn btn-sm" hx-get="/admin/links/{{.ID}}/delete" hx-target="#modal-body" hx-swap="innerHTML" aria-label="Excluir {{.Title}}">{{icon "trash-2"}} Excluir</button></td>
 </tr>{{end}}

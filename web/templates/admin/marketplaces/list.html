@@ -1,9 +1,9 @@
 {{define "marketplaces_list"}}<div id="marketplaces-list">
-{{if .Items}}<div class="table-wrap"><table>
+{{if .Items}}<div class="table-wrap"><table class="table-cards">
 <caption class="sr-only">Lista de marketplaces</caption>
 <thead><tr><th scope="col">Nome</th><th scope="col">Política</th><th scope="col"><span class="sr-only">Ações</span></th></tr></thead>
 <tbody>{{range .Items}}<tr>
-<td>{{.Name}}</td><td>{{template "policy_badge" .ShortenPolicy}}</td>
+<td>{{.Name}}</td><td data-label="Política">{{template "policy_badge" .ShortenPolicy}}</td>
 <td class="actions"><button class="btn btn-sm" hx-get="/admin/marketplaces/{{.ID}}/edit" hx-target="#modal-body" hx-swap="innerHTML" aria-label="Editar {{.Name}}">{{icon "pencil"}} Editar</button> <button class="btn btn-sm" hx-get="/admin/marketplaces/{{.ID}}/delete" hx-target="#modal-body" hx-swap="innerHTML" aria-label="Excluir {{.Name}}">{{icon "trash-2"}} Excluir</button></td>
 </tr>{{end}}</tbody></table>{{template "pager" .Pager}}</div>
 {{else}}{{if .Q}}{{template "empty_state" (dict "Icon" "search" "Text" (printf "Nenhum marketplace encontrado para “%s”." .Q))}}{{else}}{{template "empty_state" (dict "Icon" "store" "Text" "Nenhum marketplace cadastrado. Crie o primeiro para começar a cadastrar links.")}}{{end}}{{end}}

@@ -66,9 +66,12 @@ func TestDesignTokensMeetWCAGAA(t *testing.T) {
 				t.Errorf("%s: %s sobre %s tem %.2f:1 (mínimo 4,5:1)", name, p[0], p[1], c)
 			}
 		}
+		// componentes não textuais (WCAG 1.4.11): foco, contorno de campos e trilho do interruptor
 		for _, bg := range []string{"bg", "surface"} {
-			if c := contrast(tk["focus"], tk[bg]); c < 3 {
-				t.Errorf("%s: o anel de foco sobre %s tem %.2f:1 (mínimo 3:1)", name, bg, c)
+			for _, fg := range []string{"focus", "line-strong"} {
+				if c := contrast(tk[fg], tk[bg]); c < 3 {
+					t.Errorf("%s: %s sobre %s tem %.2f:1 (mínimo 3:1)", name, fg, bg, c)
+				}
 			}
 		}
 	}
@@ -110,6 +113,30 @@ func TestTailwindEntryExposesTokensAndDarkVariant(t *testing.T) {
 	for _, want := range []string{`@import "tailwindcss"`, "@theme inline", "@custom-variant dark", ".dark", "static/css/base.css", "--color-brand", "--color-surface", "--font-sans"} {
 		if !strings.Contains(string(b), want) {
 			t.Errorf("web/assets/app.css sem %q", want)
+		}
+	}
+}
+
+// Todo componente em templates/components precisa estar no guia de estilo.
+func TestStyleGuideDocumentsEveryComponent(t *testing.T) {
+	guide, err := os.ReadFile("../docs/guia-de-estilo.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	entries, err := Files.ReadDir("templates/components")
+	if err != nil {
+		t.Fatal(err)
+	}
+	define := regexp.MustCompile(`\{\{define "([a-z_]+)"\}\}`)
+	for _, e := range entries {
+		if e.IsDir() {
+			continue
+		}
+		raw, _ := Files.ReadFile("templates/components/" + e.Name())
+		for _, m := range define.FindAllStringSubmatch(string(raw), -1) {
+			if !strings.Contains(string(guide), "`"+m[1]+"`") && !strings.Contains(string(guide), "`"+m[1]+"` /") && !strings.Contains(string(guide), "/ `"+m[1]+"`") {
+				t.Errorf("componente %q (%s) não está no guia de estilo", m[1], e.Name())
+			}
 		}
 	}
 }

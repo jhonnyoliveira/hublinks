@@ -35,7 +35,7 @@ func TestDashboardShowsTotalsTopLinksChannelsAndNotice(t *testing.T) {
 		t.Fatalf("status %d", w.Code)
 	}
 	mustContain(t, w, "<html", "Cliques", "Visitantes únicos", "Links ativos",
-		`<td class="num">3</td>`, "Fone &lt;i&gt;bt&lt;/i&gt;", "URL curta (sem canal)",
+		`<td class="num" data-label="Cliques">3</td>`, "Fone &lt;i&gt;bt&lt;/i&gt;", "URL curta (sem canal)",
 		"Links mais clicados", "Como os únicos são contados", "/static/vendor/uplot.iife.min.js", "/static/js/chart.js",
 		`data-chart-data`, "Ver dados em tabela", `aria-current="true"`)
 	mustNotContain(t, w, "<i>bt</i>")
@@ -79,10 +79,10 @@ func TestLinksListShowsClicksAndNeverZeroForDirect(t *testing.T) {
 		}
 		return body[start : start+strings.Index(body[start:], "</tr>")]
 	}
-	if r := row(trackable); !strings.Contains(r, `<td class="num">2</td><td class="num hide-sm">1</td>`) {
+	if r := row(trackable); !strings.Contains(r, `<td class="num" data-label="Cliques">2</td><td class="num hide-sm" data-label="Únicos">1</td>`) {
 		t.Fatalf("linha rastreável:\n%s", r)
 	}
-	if r := row(notTrackable); !strings.Contains(r, "Não rastreável") || !strings.Contains(r, "histórico: 1 cliques") || strings.Contains(r, `<td class="num">0</td>`) {
+	if r := row(notTrackable); !strings.Contains(r, "Não rastreável") || !strings.Contains(r, "histórico: 1 cliques") || strings.Contains(r, `data-label="Cliques">0</td>`) {
 		t.Fatalf("linha direct:\n%s", r)
 	}
 	mustContain(t, w, `id="period-state"`, `hx-include="#period-state"`, `aria-current="true">7 dias`)
@@ -94,7 +94,7 @@ func TestLinkToggleRowKeepsCounts(t *testing.T) {
 	id := e.fullLink(t, "Fone", mp, nil, true)
 	e.click(t, id, nil, true, true, false)
 	w := e.do(t, e.c.LinkToggle, req{method: http.MethodPost, target: "/admin/links/" + id.String() + "/toggle", id: id.String(), form: form("active", "false"), hx: true, currentURL: "http://x/admin/links?period=30d"})
-	mustContain(t, w, `<td class="num">1</td>`)
+	mustContain(t, w, `<td class="num" data-label="Cliques">1</td>`)
 }
 
 func TestLinkShowStatsByChannelAndDirectNotice(t *testing.T) {

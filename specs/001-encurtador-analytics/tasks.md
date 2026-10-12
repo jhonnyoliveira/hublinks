@@ -472,7 +472,7 @@ nos dois temas, sem rolagem horizontal e com o tema lembrado.
 
 ### Tests for User Story 4
 
-- [ ] T078 [P] [US4] Testes de templates em `internal/admin/render_test.go`:
+- [X] T078 [P] [US4] Testes de templates em `internal/admin/render_test.go`:
   - cada listagem vazia renderiza `empty_state` com o próximo passo (ex.: "Cadastre seu
     primeiro link");
   - todo `<input>` tem `<label>` associado e toda `<img>` tem `alt`;
@@ -482,21 +482,21 @@ nos dois temas, sem rolagem horizontal e com o tema lembrado.
 
 ### Implementation for User Story 4
 
-- [ ] T079 [P] [US4] Tornar as tabelas responsivas em `web/templates/components/table.html`:
+- [X] T079 [P] [US4] Tornar as tabelas responsivas em `web/templates/components/table.html`:
   colunas secundárias com `hidden md:table-cell` e linhas em formato de cartão abaixo de `md`.
   Aplicar nas listagens de links, marketplaces, canais e lixeira.
-- [ ] T080 [P] [US4] Acrescentar estados vazios com orientação às listagens e ao dashboard em
+- [X] T080 [P] [US4] Acrescentar estados vazios com orientação às listagens e ao dashboard em
   `web/templates/admin/**`.
-- [ ] T081 [P] [US4] Implementar a proteção contra perda de dados não salvos em
+- [X] T081 [P] [US4] Implementar a proteção contra perda de dados não salvos em
   `web/static/js/unsaved.js` (Alpine: marca o formulário alterado e usa `beforeunload` e
   `htmx:beforeRequest` em navegação) e aplicar em `web/templates/admin/links/form.html`.
-- [ ] T082 [P] [US4] Garantir foco visível (`focus-visible`), navegação por teclado no menu, no
+- [X] T082 [P] [US4] Garantir foco visível (`focus-visible`), navegação por teclado no menu, no
   modal e nas abas, e contraste AA dos tokens nos dois temas, em `web/assets/app.css` e
   `web/templates/components/*`.
 - [X] T083 [US4] Implementar `GET /admin/ui` em `internal/admin/ui.go` e
   `web/templates/admin/ui.html`, mostrando todos os componentes nos dois temas, registrado só
   com `APP_ENV=development`.
-- [ ] T084 [US4] Escrever o guia de estilo `docs/guia-de-estilo.md` (tokens, componentes, quando
+- [X] T084 [US4] Escrever o guia de estilo `docs/guia-de-estilo.md` (tokens, componentes, quando
   usar cada um, padrões CRUD da seção 11.1).
 
 **Checkpoint**: História 4 completa; o passo 9 do `quickstart.md` funciona.

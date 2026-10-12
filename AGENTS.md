@@ -17,7 +17,9 @@ A **User Story 2 — Ver cliques totais e únicos** (T053–T069) está implemen
 
 A **User Story 3 — prévia de compartilhamento** (T070–T077) está implementada e testada: crawlers conhecidos recebem a prévia Open Graph (`redirect/preview.go`) sem gerar evento, a detecção de automação (5 códigos distintos em 10 s pelo mesmo IP → `is_bot`) limpa as chaves expiradas, e `/privacidade` e o aviso das páginas públicas seguem a configuração. Foi exercitada contra o servidor real (curl): prévia `200` com metatags, o 5º código distinto gravado como robô e fora das estatísticas. Falta o aceite do checkpoint da US3 pelo responsável; o item 5 do `quickstart.md` está coberto.
 
-O próximo trabalho é a **User Story 4 — painel no celular, claro e escuro** (T078 em diante). Siga a ordem do `tasks.md` e verifique cada tarefa contra a descrição antes de marcá-la; boa parte do visual da fundação já existe.
+A **User Story 4 — painel no celular, claro e escuro** (T078–T084) está implementada e testada no servidor: tabelas que viram cartões abaixo de 40 rem (`table-cards` + `data-label`), estados vazios com orientação (incluindo o onboarding do dashboard), token `--line-strong` (contorno de campos e interruptor a 3:1), proteção contra perda de alterações (`unsaved.js`, sem Alpine, por delegação de eventos), foco do menu móvel, `docs/guia-de-estilo.md` e testes de rótulos, `alt`, `lang`, tema e `/admin/ui` só em desenvolvimento. **Nada disso foi visto em navegador** (sem Chromium no ambiente): o layout a 375 px, o foco visível, o gráfico e o `unsaved.js` real precisam do passo 9 do `quickstart.md` feito por uma pessoa, nos dois temas. Falta o aceite do checkpoint da US4.
+
+O próximo trabalho é a **User Story 5 — acesso restrito** (T085 em diante): `internal/auth` (limitador de login) e `internal/httpx/ratelimit.go` já existem e precisam ser verificados contra a descrição de cada tarefa antes de serem marcados.
 
 Pontos de atenção:
 

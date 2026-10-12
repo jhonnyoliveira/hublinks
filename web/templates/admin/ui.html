@@ -1,4 +1,5 @@
-{{define "head"}}<title>Guia de componentes | Hub Links</title>{{end}}
+{{define "head"}}<title>Guia de componentes | Hub Links</title>
+<link rel="stylesheet" href="/static/vendor/uPlot.min.css"><script src="/static/vendor/uplot.iife.min.js" defer></script><script src="/static/js/chart.js" defer></script>{{end}}
 {{define "content"}}<h1>Guia de componentes</h1>
 <section aria-labelledby="g-botoes"><h2 id="g-botoes" class="section-title">Botões e selos</h2>
 {{template "button" (dict "Label" "Primário" "Variant" "primary" "Icon" "plus")}} {{template "button" (dict "Label" "Padrão")}} {{template "button" (dict "Label" "Perigo" "Variant" "danger" "Icon" "trash-2")}} {{template "button" (dict "Icon" "copy" "AriaLabel" "Copiar" "Small" true)}}
@@ -6,5 +7,9 @@
 <section aria-labelledby="g-campo"><h2 id="g-campo" class="section-title">Campo</h2><form>{{template "field" (dict "ID" "example" "Name" "example" "Label" "Exemplo" "Hint" "Texto de ajuda." "Required" true)}}{{template "field" (dict "ID" "example-err" "Name" "example2" "Label" "Com erro" "Error" "Mensagem de erro.")}}</form></section>
 <section aria-labelledby="g-estados"><h2 id="g-estados" class="section-title">Estados</h2>{{template "empty_state" (dict "Icon" "inbox" "Text" "Cadastre seu primeiro link." "ActionHref" "/admin/links/new" "ActionLabel" "Novo link")}}{{template "skeleton" .}}</section>
 <section aria-labelledby="g-tabela"><h2 id="g-tabela" class="section-title">Tabela e cartão</h2>{{template "table" .Table}}{{template "card" (dict "Title" "Cartão" "Text" "Conteúdo de exemplo." "Href" "/admin" "Action" "Ir ao painel")}}</section>
-<section aria-labelledby="g-nav"><h2 id="g-nav" class="section-title">Abas e período</h2>{{template "tabs" .Tabs}}{{template "period_picker" .Periods}}</section>
+<section aria-labelledby="g-nav"><h2 id="g-nav" class="section-title">Abas e período</h2>{{template "tabs" .Tabs}}{{template "period_picker" .Periods}}{{template "period_custom" (dict "Period" .PeriodCustom "Action" "/admin/ui")}}</section>
+<section aria-labelledby="g-ind"><h2 id="g-ind" class="section-title">Indicadores e gráfico</h2>
+<div class="stats-grid">{{template "stat" (dict "Title" "Cliques" "Value" "1.234" "Hint" "Texto de apoio.")}}{{template "stat" (dict "Title" "Visitantes únicos" "Value" "987")}}</div>
+<div class="card card-pad" style="margin-top:1rem">{{template "chart" (dict "Label" "Gráfico de exemplo" "Data" .Chart "Rows" .DayRows)}}</div></section>
+<section aria-labelledby="g-pol"><h2 id="g-pol" class="section-title">Política e aviso</h2>{{template "policy_badge" "shorten"}} {{template "policy_badge" "direct"}}<p class="alert" role="note">Aviso informativo (<code>.alert</code>); use <code>.alert-danger</code> para erros e <code>.alert-info</code> para orientações.</p></section>
 {{end}}

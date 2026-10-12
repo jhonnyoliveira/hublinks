@@ -75,9 +75,12 @@ func TestComponentGuideRenders(t *testing.T) {
 			Href, Text string
 			Current    bool
 		}{{"?p=7d", "7 dias", true}}),
+		"PeriodCustom": d("From", "2026-10-01", "To", "2026-10-07", "Target", ""),
+		"Chart":        template.JS(`{"days":["2026-10-01"],"clicks":[1],"unique":[1]}`),
+		"DayRows":      [][]string{{"01/10/2026", "1", "1"}},
 	}
 	out := page(t, "admin", "admin/ui", data)
-	has(t, out, "Guia de componentes", "Botões e selos", "Campo", "Estados", "Tabela e cartão", "Abas e período")
+	has(t, out, "Guia de componentes", "Botões e selos", "Campo", "Estados", "Tabela e cartão", "Abas e período", "Indicadores e gráfico", "data-chart-data")
 }
 
 // dashboardData reproduz o formato do painel (admin.dashboardData) sem importar o pacote admin.

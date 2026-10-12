@@ -51,6 +51,6 @@
       if (box._plot) box._plot.setSize({ width: Math.max(box.clientWidth, 280), height: 260 });
     });
   });
-  // Troca de tema: as cores vêm de variáveis CSS.
-  new MutationObserver(drawAll).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  // Troca de tema (classe .dark/.light no <html>): as cores vêm de variáveis CSS.
+  new MutationObserver(drawAll).observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
 })();

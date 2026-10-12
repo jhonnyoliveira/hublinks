@@ -40,9 +40,9 @@
 <h3 class="section-title">Cliques por dia</h3>
 <div class="card card-pad">{{template "chart" (dict "Label" "Cliques e visitantes únicos por dia" "Data" .Stats.Chart "Rows" .Stats.DayRows)}}</div>
 <h3 class="section-title">Por canal</h3>
-{{if .Stats.Channels}}<div class="table-wrap"><table><caption class="sr-only">Cliques por canal no período</caption>
+{{if .Stats.Channels}}<div class="table-wrap"><table class="table-cards"><caption class="sr-only">Cliques por canal no período</caption>
 <thead><tr><th scope="col">Canal</th><th scope="col" class="hide-sm">URL</th><th scope="col" class="num">Cliques</th><th scope="col" class="num">Únicos</th></tr></thead>
-<tbody>{{range .Stats.Channels}}<tr><td>{{.Name}}</td><td class="hide-sm"><code>{{.URL}}</code></td><td class="num">{{num .Clicks}}</td><td class="num">{{num .Unique}}</td></tr>{{end}}</tbody></table></div>
+<tbody>{{range .Stats.Channels}}<tr><td>{{.Name}}</td><td class="hide-sm" data-label="URL"><code>{{.URL}}</code></td><td class="num" data-label="Cliques">{{num .Clicks}}</td><td class="num" data-label="Únicos">{{num .Unique}}</td></tr>{{end}}</tbody></table></div>
 <p class="muted history-note">Em cada canal, “únicos” conta os visitantes daquela URL. O alcance do link (acima) conta cada visitante uma vez, em todos os canais.</p>
 {{else}}{{template "empty_state" (dict "Icon" "link" "Text" "Ainda não há cliques neste período.")}}{{end}}
 {{end}}

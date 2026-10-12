@@ -45,7 +45,7 @@ func TestPreviewWithImage(t *testing.T) {
 			`<meta name="twitter:card" content="summary_large_image">`,
 			`<meta name="robots" content="noindex">`,
 			`href="/privacidade"`,
-			`width="600" height="314"`,
+			`width="600" height="314"`, `alt="Fone &lt;b&gt;BT&lt;/b&gt; &amp; cia"`,
 			`href="https://loja.example/produto?a=1&amp;b=2"`,
 		} {
 			if !strings.Contains(body, want) {
