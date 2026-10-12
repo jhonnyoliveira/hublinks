@@ -19,6 +19,7 @@ partida com uma mensagem que a nomeia. O serviço aplica as migrações ao inici
 - **`REPORT_TZ`** define o que é um "dia" nas consolidações, nas séries e na retenção. É fixado na primeira
   consolidação; depois disso o serviço recusa subir com outro fuso.
 - **`PEPPER` e `POSTGRES_PASSWORD`** do compose não podem ficar nos valores de exemplo em produção.
+- **`HTTP_PORT`** (compose): porta publicada no host (padrão 8080); a aplicação escuta sempre na 8080 dentro do contêiner. Ao mudá-la, ajuste `BASE_URL` para a mesma porta.
 
 ## Backup do banco
 

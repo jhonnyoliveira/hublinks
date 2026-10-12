@@ -11,8 +11,11 @@ services:
     # banco é criado abaixo. Para usar um banco externo, troque esta linha.
     environment:
       DATABASE_URL: postgresql://hublinks:${POSTGRES_PASSWORD:-hublinks}@db:5432/hublinks?sslmode=disable
+      # Dentro do contêiner a aplicação sempre escuta na 8080 (e o healthcheck consulta essa
+      # porta); HTTP_PORT escolhe só a porta publicada no host.
+      HTTP_ADDR: ":8080"
     ports:
-      - "8081:8081" # as métricas (9091) ficam só na rede interna
+      - "${HTTP_PORT:-8080}:8080" # as métricas (9091) ficam só na rede interna
     restart: unless-stopped
     depends_on:
       db:
