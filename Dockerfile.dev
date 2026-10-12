@@ -124,4 +124,11 @@ RUN python3 -c 'import sys; assert sys.version_info >= (3, 11), "Spec Kit exige 
 # Instalado como o usuário final, para ir para o $HOME dele e não para /root.
 RUN curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/master/install.sh | sh
 
+# Chromium headless + Playwright + axe-core para `make browser-check` (verificação em navegador,
+# passo 9 do quickstart). As bibliotecas de sistema do Chromium vêm do bloco apt acima; o navegador
+# e as ferramentas ficam no $HOME do usuário final (~/.cache/hublinks-browser), fora do repositório.
+# O setup é idempotente e também pode ser rodado à mão: `make browser-setup`.
+COPY --chown=${USERNAME}:${USERNAME} scripts/browser-check/ /tmp/browser-check/
+RUN sh /tmp/browser-check/setup.sh && rm -rf /tmp/browser-check
+
 WORKDIR /workspaces/app

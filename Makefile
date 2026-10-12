@@ -2,7 +2,7 @@ TEST_DATABASE_URL ?= postgresql://hublinks:hublinks@postgres:5432/postgres
 export TEST_DATABASE_URL
 TAILWIND_VERSION ?= 4.1.17
 
-.PHONY: run test test-race test-ci lint css
+.PHONY: run test test-race test-ci lint css browser-setup browser-check
 run:
 	go run ./cmd/hublinks serve
 test:
@@ -16,3 +16,7 @@ lint:
 	go vet ./...
 css:
 	TAILWIND_VERSION=$(TAILWIND_VERSION) scripts/build-css.sh
+browser-setup:
+	sh scripts/browser-check/setup.sh
+browser-check:
+	node scripts/browser-check/check.mjs $(ARGS)

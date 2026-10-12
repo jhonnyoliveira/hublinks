@@ -32,12 +32,25 @@ Eles usam PostgreSQL real e criam um banco temporário por teste. Sem `TEST_DATA
 
 ## Verificação em navegador
 
-Os testes Go cobrem o HTML que o servidor devolve, mas não o JavaScript (HTMX, Alpine, modal, tema). Para isso usamos
-um Chromium headless, com o Playwright instalado **fora do repositório**:
+Os testes Go cobrem o HTML que o servidor devolve, mas não o JavaScript (HTMX, Alpine, modal, tema) nem o layout real.
+Para isso há o `scripts/browser-check`, que usa Chromium headless (Playwright) e axe-core, instalados **fora do
+repositório**, em `~/.cache/hublinks-browser` (o `Dockerfile.dev` já os instala; fora dele, rode uma vez
+`make browser-setup`, que é idempotente).
+
+Suba o app contra um banco descartável, sem tocar no de desenvolvimento (`MANUAL_DB=hl_bc HTTP_ADDR=:8099 METRICS_ADDR=
+scripts/manual-run.sh --reset --drop`) e rode:
 
 ```sh
-mkdir -p /tmp/pw && cd /tmp/pw && npm init -y && npm i playwright && npx playwright install chromium
+make browser-check ARGS="--base http://localhost:8099 --login admin@example.com:senha-de-teste-123 \
+  --path /admin/login --path /privacidade --path /admin --path /zzzzzzz=404"
 ```
 
-As bibliotecas de sistema do Chromium vêm de `Dockerfile.dev` (reconstrua o DevContainer). Suba o app contra um banco
-descartável (`CREATE DATABASE`/`DROP DATABASE`), sem tocar no banco de desenvolvimento.
+Para cada caminho, tamanho de tela (`--viewports`, padrão `375x667,1280x800`) e tema (`--schemes`, padrão `light,dark`) ele
+confere: status esperado (`caminho=status`), rolagem horizontal, `lang`, recursos de terceiros, erros de console e de
+JavaScript, acessibilidade e contraste (axe-core, WCAG 2.x A e AA) e a ordem de foco por Tab com indicador visível.
+Grava capturas e `report.json` em `var/browser-check/` (ignorado pelo Git). **Falhas** (saída 1): status inesperado,
+rolagem horizontal, terceiros, erro de console, `axe` sério ou crítico. **Avisos** não falham: foco sem indicador
+visível, `axe` moderado, `h1` fora de 1.
+
+O que ele **não** faz: julgar o visual, testar fluxos (cliques de HTMX, formulários) nem medir Lighthouse. Isso
+continua com uma pessoa, usando as capturas como apoio.

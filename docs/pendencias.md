@@ -70,3 +70,11 @@ Confirmadas pelo responsável em 2026-10-12.
 ## 7. Validações que dependem de uma pessoa [CONCLUÍDO]
 
 Todas feitas pelo responsável (T104, passos 3 e 9 do `quickstart.md` e aceite dos checkpoints); ver [`verificacao.md`](verificacao.md).
+
+## 8. Links dentro de texto, no tema escuro, só se distinguem pela cor [ABERTO]
+
+Achado do `scripts/browser-check` em 2026-10-12 (regra `link-in-text-block` do axe-core, severidade séria, WCAG 1.4.1):
+no tema escuro, em `/privacidade`, `/admin/links` e na página 404 (375 px), links no meio de um texto aparecem azuis e
+sem sublinhado, então só a cor os distingue do texto ao redor. O tema claro passa. Proposta: sublinhar links em blocos
+de texto (`text-decoration: underline`) ou dar contraste mínimo de 3:1 entre o link e o texto vizinho. Aguarda decisão do
+responsável. Se não for tratado antes, as páginas públicas da fase 2 herdam o defeito e a T060 vai falhar nelas.

@@ -38,3 +38,6 @@ bin/
 deploy/.env
 web/static/css/app.[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f].css
 web/static/manifest.json
+
+# Saída local de ferramentas (imagens enviadas em desenvolvimento, capturas do browser-check)
+var/
