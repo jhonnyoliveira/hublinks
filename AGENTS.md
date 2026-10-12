@@ -29,7 +29,9 @@ A **User Story 7 — subir o serviço com um comando** (T100–T103) foi auditad
 
 A **Fase 10 — endurecimento** (T105–T108 e T110) está concluída: métricas HTTP por rota (padrão do mux) e status e o histograma `hublinks_redirect_duration_seconds`; `scripts/loadtest.sh` executado de verdade (500 req/s por 60 s: p95 de 0,88 ms no cliente e ≤ 0,5 ms no servidor, 0 eventos descartados); `docs/operacao.md` completo (variáveis, backup, `PEPPER`/`REPORT_TZ`, jobs, métricas e alertas, carga); e a auditoria de privacidade, agora automatizada em `internal/audit` (IP e cookies só nos arquivos permitidos, nenhuma coluna de IP, nenhum IP em logs).
 
-**A fase 1 está concluída e aceita** (T104 e T109 incluídos; checkpoints das histórias 2 a 7 aceitos em 2026-10-12). O registro está em `docs/verificacao.md`; as assunções que ainda pedem confirmação, em `docs/pendencias.md` (item 6). A fase 2 só começa com instrução explícita do responsável.
+**A fase 1 está concluída e aceita** (T104 e T109 incluídos; checkpoints das histórias 2 a 7 aceitos em 2026-10-12). O registro está em `docs/verificacao.md`; as decisões e assunções confirmadas, em `docs/pendencias.md` (nada pendente).
+
+**Fase 2 — Páginas de produto (CMS): autorizada pelo responsável em 2026-10-12** e especificada em `specs/002-paginas-de-produto/` (`spec.md`, `plan.md`, `research.md`, `data-model.md`, `contracts/`, `quickstart.md` e `tasks.md`, com 61 tarefas em 9 fases), na branch `002-paginas-de-produto`. Ela ainda **não foi implementada**: nenhuma tarefa do `tasks.md` está concluída. Implemente somente o que o `tasks.md` descreve, na ordem dos IDs e das fases (Setup, Foundational e depois US1 a US6), com testes primeiro, e siga as instruções do topo daquele arquivo. Decisões da fase 2 que valem sempre: imagens enviadas pelo painel e servidas pelo próprio serviço (sem recursos de terceiros), a página abre também no código curto do produto com `/p/{slug}` como canônico, o catálogo é dimensionado para até 1.000 produtos publicados, e os links `direct` continuam sem métrica (a visita mede a página, não o link). Fica para a fase 3, e **não** deve ser feito agora: `sitemap.xml`, `robots.txt`, home, busca e navegação por categorias no site público. Quando um épico da fase 2 terminar, atualize esta seção.
 
 Pontos de atenção:
 
@@ -42,7 +44,7 @@ Pontos de atenção:
 
 - Implemente somente o trabalho solicitado, em incrementos entregáveis. Criar este arquivo não autoriza iniciar a aplicação.
 - Siga a sequência da seção 13 do escopo: fundação; modelo e CRUD; redirecionamento; eventos; bots e preview; estatísticas e retenção; painel; endurecimento.
-- Não antecipe CMS, catálogo público, multiusuário ou SaaS. A fase 2 só começa após o aceite da fase 1.
+- O CMS de produtos (fase 2) segue `specs/002-paginas-de-produto/tasks.md`. Não antecipe site público e catálogo público (fase 3), multiusuário (fase 4) ou SaaS (fase 5).
 - Preserve a infraestrutura de desenvolvimento existente ao adicionar o deploy da aplicação; inspecione os arquivos Docker e `.devcontainer/` antes de modificá-los.
 
 ## Arquitetura e organização
