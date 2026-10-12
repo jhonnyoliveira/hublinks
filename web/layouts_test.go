@@ -75,7 +75,7 @@ func TestComponentGuideRenders(t *testing.T) {
 			Href, Text string
 			Current    bool
 		}{{"?p=7d", "7 dias", true}}),
-		"PeriodCustom": d("From", "2026-10-01", "To", "2026-10-07", "Target", ""),
+		"PeriodCustom": d("From", "2026-10-01", "To", "2026-10-07", "FromBR", "01/10/2026", "ToBR", "07/10/2026", "Target", ""),
 		"Chart":        template.JS(`{"days":["2026-10-01"],"clicks":[1],"unique":[1]}`),
 		"DayRows":      [][]string{{"01/10/2026", "1", "1"}},
 	}
@@ -92,9 +92,9 @@ func dashboardData(csrf string) any {
 	return struct {
 		CSRF   string
 		Period struct {
-			Items                          []item
-			Target, Label, Error, From, To string
-			Hidden                         []struct{ Name, Value string }
+			Items                                        []item
+			Target, Label, Error, From, To, FromBR, ToBR string
+			Hidden                                       []struct{ Name, Value string }
 		}
 		Summary struct {
 			Clicks, Unique, ActiveLinks int
