@@ -62,7 +62,8 @@ Público (sem sessão). Corpo `text/plain`: `{"k":"<código>","c":"<segmento ou 
 | Código de produto, automação detectada | `204` | `view` com `is_bot=true` |
 | Crawler conhecido, corpo inválido, código inexistente ou de link, canal inexistente | `204` | nenhum |
 | Excedeu o limite de taxa | `429` | não |
-| Método diferente de `POST` | `405` | não |
+| `GET` em `/api/v1/beacon/view` | resposta do coringa `/api/v1/` da área administrativa (`401` sem sessão), sem evento | não |
+| Outro método (`PUT`, `DELETE`…) | `405` | não |
 
 Sempre sem corpo e sem `Set-Cookie`. Falha do envio é silenciosa no navegador.
 

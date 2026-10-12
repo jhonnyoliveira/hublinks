@@ -66,7 +66,7 @@ Tente relacionar o produto a ele mesmo: recusado.
 ## 6. Visitas e cliques (História 4, SC-005, SC-006, SC-009)
 
 ```bash
-P=$(psql ... -Atc "select code from short_codes where target_type='product' limit 1")
+P=$(PGHOST=postgres PGUSER=hublinks PGPASSWORD=hublinks psql -d hl_manual -Atc "select code from short_codes where target_type='product' limit 1")
 curl -si localhost:8080/$P         -A "UA-1" | head -8   # 200 mesma página, sem Location, sem Set-Cookie
 curl -si localhost:8080/wapp/$P    -A "UA-1" >/dev/null
 curl -si localhost:8080/p/fone-bluetooth-x1 -A "WhatsApp/2.23" >/dev/null   # crawler: sem evento
