@@ -46,7 +46,7 @@ func Build(ctx context.Context, pool *pgxpool.Pool, c config.Config) App {
 	mux.Handle("GET /static/", assets.Handler())
 	mux.Handle("GET /privacidade", web.Privacy(c))
 	sessions := auth.Manager{Pool: pool}
-	login := admin.Login{Pool: pool, Sessions: sessions, Limiter: auth.NewLoginLimiter(c.Pepper, c.LoginMaxFailures, c.LoginWindow, c.LoginLockout)}
+	login := admin.Login{Pool: pool, Sessions: sessions, Limiter: auth.NewLoginLimiter(c.Pepper, c.LoginMaxFailures, c.LoginWindow, c.LoginLockout).WithTrustedProxies(c.TrustedProxies)}
 	mux.Handle("GET /admin/login", login)
 	mux.Handle("POST /admin/login", login)
 	mux.Handle("POST /admin/logout", sessions.Require(auth.RequireCSRF(admin.Logout(sessions)), false))
@@ -127,7 +127,7 @@ func Build(ctx context.Context, pool *pgxpool.Pool, c config.Config) App {
 	}()
 	recorder := redirect.EventRecorder{Queue: queue, Pepper: c.Pepper, TrustedProxies: c.TrustedProxies, Bots: redirect.NewBotDetector(c.BotDistinctCodes, c.BotWindow)}
 	public := &redirect.Handler{Catalog: store.NewCatalog(pool), Cache: resolutionCache, BaseURL: c.BaseURL, Recorder: recorder}
-	mux.Handle("GET /", httpx.NewRateLimiter(c.Pepper, c.PublicRateLimit).Middleware(public))
+	mux.Handle("GET /", httpx.NewRateLimiter(c.Pepper, c.PublicRateLimit).WithTrustedProxies(c.TrustedProxies).Middleware(public))
 	logger := newLogger(c.LogLevel)
 	return App{Handler: httpx.Recover(httpx.Log(crossOrigin(mux), logger), logger), Metrics: m, Drained: drained}
 }

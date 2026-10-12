@@ -513,26 +513,26 @@ nenhuma resposta pública define cookies.
 
 ### Tests for User Story 5
 
-- [ ] T085 [P] [US5] Testes em `internal/auth/limiter_test.go` (relógio injetável, `-race`):
+- [X] T085 [P] [US5] Testes em `internal/auth/limiter_test.go` (relógio injetável, `-race`):
   - 5 falhas em 15 min por chave de IP **ou** por e-mail normalizado bloqueiam por 15 min;
   - a 6ª tentativa com a senha correta é recusada;
   - após o bloqueio, volta a aceitar;
   - sucesso antes do limite zera o contador do e-mail;
   - a mensagem não revela se o e-mail existe.
-- [ ] T086 [P] [US5] Testes em `internal/httpx/ratelimit_test.go`: 300/min por chave de IP; o
+- [X] T086 [P] [US5] Testes em `internal/httpx/ratelimit_test.go`: 300/min por chave de IP; o
   excedente recebe `429` com `Retry-After` e nenhum evento é enfileirado; `/healthz` fica isento.
   Executar com `-race`.
-- [ ] T087 [P] [US5] Teste de varredura em `internal/server/nocookie_test.go`: requisições a
+- [X] T087 [P] [US5] Teste de varredura em `internal/server/nocookie_test.go`: requisições a
   `/{code}`, `/{segment}/{code}`, prévia de crawler, `404`, `429` e `/privacidade` (com e sem
   sessão de admin) nunca trazem `Set-Cookie`, e toda resposta HTML entre elas contém o link para
   `/privacidade`.
 
 ### Implementation for User Story 5
 
-- [ ] T088 [US5] Implementar `internal/auth/limiter.go` (contadores em memória por chave
+- [X] T088 [US5] Implementar `internal/auth/limiter.go` (contadores em memória por chave
   `httpx.Key` e por e-mail, com `LOGIN_MAX_FAILURES`, `LOGIN_WINDOW` e `LOGIN_LOCKOUT`) e
   integrá-lo ao `internal/admin/login.go`, com mensagem informando o prazo do bloqueio.
-- [ ] T089 [US5] Implementar `internal/httpx/ratelimit.go` (`golang.org/x/time/rate` por chave
+- [X] T089 [US5] Implementar `internal/httpx/ratelimit.go` (`golang.org/x/time/rate` por chave
   de IP, `PUBLIC_RATE_LIMIT`/min com rajada de 60 e limpeza de chaves ociosas) e aplicá-lo às
   rotas públicas em `internal/server/server.go`.
 

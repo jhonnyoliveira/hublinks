@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -110,7 +111,7 @@ func TestLoginLocksAfterTooManyFailures(t *testing.T) {
 		postLogin(l, "admin@example.com", "errada-errada-123", "")
 	}
 	w := postLogin(l, "admin@example.com", adminPassword, "")
-	if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), "Muitas tentativas") || len(w.Result().Cookies()) != 0 {
+	if w.Code != http.StatusTooManyRequests || !strings.Contains(w.Body.String(), "Muitas tentativas") || w.Header().Get("Retry-After") == "" || len(w.Result().Cookies()) != 0 {
 		t.Fatalf("bloqueado deveria recusar até a senha correta: %d\n%s", w.Code, w.Body.String())
 	}
 }
@@ -148,5 +149,33 @@ func TestLogoutInvalidatesSessionAndClearsCookie(t *testing.T) {
 	}
 	if _, err := m.Lookup(context.Background(), raw); err == nil {
 		t.Fatal("a sessão deve ter sido invalidada no servidor")
+	}
+}
+
+// 5 senhas erradas: a 6ª tentativa, mesmo com a senha correta, é recusada com o
+// prazo do bloqueio; e a recusa é idêntica para e-mail existente e inexistente.
+func TestLoginSixthAttemptIsRefusedWithoutRevealingAccounts(t *testing.T) {
+	l, _ := newLogin(t, 5)
+	for i := 0; i < 5; i++ {
+		w := postLogin(l, "admin@example.com", "errada-errada-123", "")
+		if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), "E-mail ou senha inválidos") {
+			t.Fatalf("falha %d: %d", i+1, w.Code)
+		}
+	}
+	w := postLogin(l, "admin@example.com", adminPassword, "")
+	if w.Code != http.StatusTooManyRequests || len(w.Result().Cookies()) != 0 {
+		t.Fatalf("a 6ª com a senha correta deveria ser recusada: %d", w.Code)
+	}
+	body := w.Body.String()
+	if !strings.Contains(body, "Tente novamente em cerca de 1 minuto") {
+		t.Fatalf("a mensagem deveria informar o prazo:\n%s", body)
+	}
+	if secs, err := strconv.Atoi(w.Header().Get("Retry-After")); err != nil || secs < 1 || secs > 61 {
+		t.Fatalf("Retry-After = %q", w.Header().Get("Retry-After"))
+	}
+	// o IP está bloqueado, então qualquer e-mail (existente ou não) recebe a mesma resposta
+	other := postLogin(l, "ninguem@example.com", "qualquer-senha-123", "")
+	if other.Code != w.Code || other.Body.String() != body {
+		t.Fatalf("a resposta de e-mail inexistente difere da de e-mail existente:\n%s\n---\n%s", other.Body.String(), body)
 	}
 }

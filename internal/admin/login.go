@@ -1,13 +1,16 @@
 package admin
 
 import (
+	"bytes"
 	"github.com/google/uuid"
 	"github.com/hublinks/hublinks/internal/auth"
 	webtmpl "github.com/hublinks/hublinks/web"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
+	"time"
 )
 
 type Login struct {
@@ -26,9 +29,13 @@ func (l Login) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	email := strings.ToLower(strings.TrimSpace(r.FormValue("email")))
-	if l.Limiter != nil && l.Limiter.Blocked(r, email) {
-		l.form(w, r.FormValue("next"), "Muitas tentativas. Aguarde alguns minutos.")
-		return
+	if l.Limiter != nil {
+		if wait, blocked := l.Limiter.Blocked(r, email); blocked {
+			// A mensagem é a mesma para e-mail existente ou não: não revela contas.
+			w.Header().Set("Retry-After", strconv.Itoa(int(wait.Seconds())+1))
+			l.formStatus(w, http.StatusTooManyRequests, r.FormValue("next"), blockedMessage(wait))
+			return
+		}
 	}
 	var id, org uuid.UUID
 	var hash string
@@ -79,10 +86,28 @@ func dummyHash() string {
 }
 
 func (l Login) form(w http.ResponseWriter, next, msg string) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := webtmpl.Render(w, "admin", "admin/login", struct{ Next, Error, CSRF string }{next, msg, ""}); err != nil {
+	l.formStatus(w, http.StatusOK, next, msg)
+}
+
+func (l Login) formStatus(w http.ResponseWriter, status int, next, msg string) {
+	var buf bytes.Buffer
+	if err := webtmpl.Render(&buf, "admin", "admin/login", struct{ Next, Error, CSRF string }{next, msg, ""}); err != nil {
 		http.Error(w, "erro ao renderizar página", http.StatusInternalServerError)
+		return
 	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-store")
+	w.WriteHeader(status)
+	_, _ = w.Write(buf.Bytes())
+}
+
+// blockedMessage informa o prazo do bloqueio, arredondado para cima em minutos.
+func blockedMessage(wait time.Duration) string {
+	minutes := int((wait + time.Minute - 1) / time.Minute)
+	if minutes <= 1 {
+		return "Muitas tentativas. Tente novamente em cerca de 1 minuto."
+	}
+	return "Muitas tentativas. Tente novamente em cerca de " + strconv.Itoa(minutes) + " minutos."
 }
 func Logout(m auth.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

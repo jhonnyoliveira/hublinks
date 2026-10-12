@@ -18,3 +18,10 @@ Execute carga somente num ambiente isolado, após instalar `vegeta`.
 | `hublinks_events_written_total` | eventos gravados no banco |
 | `hublinks_events_write_errors_total` | lotes perdidos após 3 tentativas (alerte se crescer) |
 | `hublinks_event_queue_length` | eventos aguardando gravação |
+
+## Proxy reverso e limites
+
+O limite de taxa (`PUBLIC_RATE_LIMIT`, por minuto) e o bloqueio de login usam o IP do visitante. Atrás de um proxy, defina `TRUSTED_PROXIES` com os endereços do proxy; sem isso, todos os visitantes compartilham o IP do proxy e um único usuário pode esgotar a cota de todos. O proxy também deve preservar o cabeçalho `Host` e acrescentar o IP real a `X-Forwarded-For`.
+
+Quem excede a cota recebe `429` com `Retry-After` (segundos). A janela é deslizante: depois de esgotar a cota de uma vez, a espera pode chegar a 60 s. `/healthz`, `/privacidade` e `/static` não entram nesse limite.
+

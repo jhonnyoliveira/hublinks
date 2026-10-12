@@ -30,7 +30,10 @@ type app struct {
 
 func newApp(t *testing.T) *app { return newAppWithEnv(t, "test") }
 
-func newAppWithEnv(t *testing.T, appEnv string) *app {
+func newAppWithEnv(t *testing.T, appEnv string) *app { return newAppCfg(t, appEnv, nil) }
+
+// newAppCfg monta o servidor completo; tune ajusta a configuração de teste.
+func newAppCfg(t *testing.T, appEnv string, tune func(*config.Config)) *app {
 	t.Helper()
 	pool := testdb.New(t)
 	ctx := context.Background()
@@ -51,6 +54,9 @@ func newAppWithEnv(t *testing.T, appEnv string) *app {
 		LoginMaxFailures: 5, LoginWindow: time.Minute, LoginLockout: time.Minute,
 		EventQueueSize: 100, EventBatchSize: 10, EventFlushInterval: 50 * time.Millisecond,
 		BotDistinctCodes: 5, BotWindow: time.Minute,
+	}
+	if tune != nil {
+		tune(&cfg)
 	}
 	return &app{h: server.New(pool, cfg), cookie: &http.Cookie{Name: auth.CookieName, Value: raw}, csrf: sess.CSRF, orgID: org, t: t, baseURL: cfg.BaseURL}
 }
